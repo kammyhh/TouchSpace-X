@@ -77,4 +77,8 @@ router.get('/init/constellation', function(req, res) {
   utils.initConstellation(req, res)
 });
 
+router.post('/longTerm', function(req, res) {
+  utils.longTerm(req, res)
+});
+
 module.exports = router;

@@ -15,7 +15,6 @@ var Solution = require('./models/solution.js');
 var User = require('./models/user.js');
 var Version = require('./models/version.js');
 
-//data format/now
 var get_age = function(birthday, today) {
   var birth = new Date(birthday),
     year = birth.getFullYear(),
@@ -100,9 +99,7 @@ var get_suit = {
   '方': 'D'    //方块
 };
 
-
-
-exports.login = function(req, res){
+exports.login = function(req, res) {
   var username = req.header('username'),
     password = req.header('password'),
     ip = req['_remoteAddress'].split(':').pop();
@@ -132,7 +129,7 @@ exports.login = function(req, res){
   })
 };
 
-exports.register = function(req, res){
+exports.register = function(req, res) {
   var nickname = req.header('nickname'),
     birthday = req.header('birthday'),
     gender = req.header('gender'),
@@ -199,7 +196,7 @@ exports.register = function(req, res){
   })
 };
 
-exports.userInfo = function(req, res){
+exports.userInfo = function(req, res) {
   var userId = req.header('userId'),
     token = req.header('token');
   User.auth(userId, token, function (err, user) {
@@ -233,7 +230,7 @@ exports.userInfo = function(req, res){
   })
 };
 
-exports.contactInfo = function(req, res){
+exports.contactInfo = function(req, res) {
   var userId = req.header('userId'),
     token = req.header('token'),
     contactId = req.header('contactId');
@@ -263,7 +260,7 @@ exports.contactInfo = function(req, res){
   })
 };
 
-exports.uploadAvatar = function(req, res){
+exports.uploadAvatar = function(req, res) {
   var userId = req.header('userId'),
     token = req.header('token');
   User.info(userId, token, function (err, user) {
@@ -298,10 +295,10 @@ exports.uploadAvatar = function(req, res){
   });
 };
 
-exports.cardSolution = function(req, res){
+exports.cardSolution = function(req, res) {
   var card = req.body.card,
-    spec =req.body.spec;
-  Solution.findOne(card, function(err, solution){
+    spec = req.body.spec;
+  Solution.findOne(card, function (err, solution) {
     if (solution != null) {
       response = {
         status: 'OK',
@@ -320,17 +317,17 @@ exports.cardSolution = function(req, res){
   })
 };
 
-exports.constellationInfo = function(req, res){
+exports.constellationInfo = function(req, res) {
   var constellation = req.body.constellation,
     userId = req.body.userId;
-  Constellation.find(constellation, function(err, result){
-    User.countConstellation(constellation, function(err, count) {
+  Constellation.find(constellation, function (err, result) {
+    User.countConstellation(constellation, function (err, count) {
       User.countActiveInConstellation(constellation, function (err, active) {
-        User.rankInConstellation(userId, constellation, function(err, rank){
-          Message.sendFromConstellation(constellation, function(err, msg){
-            User.brightestInConstellation(constellation, function(err, user){
+        User.rankInConstellation(userId, constellation, function (err, rank) {
+          Message.sendFromConstellation(constellation, function (err, msg) {
+            User.brightestInConstellation(constellation, function (err, user) {
               var brightest = user['detail']['nickname'];
-              User.countGenderInConstellation(1, constellation, function(err, male){
+              User.countGenderInConstellation(1, constellation, function (err, male) {
                 var male = male, female = count - male;
                 var response = {
                   status: 'OK',
@@ -348,7 +345,7 @@ exports.constellationInfo = function(req, res){
                 console.log(response);
                 res.send(response)
               })
-           })
+            })
           });
         })
       })
@@ -398,7 +395,7 @@ exports.sendMessage = function(req, res) {
   });
 };
 
-exports.receiveMessage = function(req, res){
+exports.receiveMessage = function(req, res) {
   var userId = req.header('userId'),
     token = req.header('token');
   User.auth(userId, token, function (err, user) {
@@ -422,7 +419,7 @@ exports.receiveMessage = function(req, res){
   })
 };
 
-exports.initDeck = function(req, res){
+exports.initDeck = function(req, res) {
   Deck.clean(function () {
     var paths = [
       '/Users/hh/Downloads/cards/♠️.xlsx',
@@ -468,7 +465,7 @@ exports.initDeck = function(req, res){
   })
 };
 
-exports.initCharacteristic = function(req, res){
+exports.initCharacteristic = function(req, res) {
   Characteristic.clean(function () {
     var obj = xlsx.parse('/Users/hh/Downloads/cards/数字性格.xlsx'),
       data = obj[0]['data'];
@@ -485,7 +482,7 @@ exports.initCharacteristic = function(req, res){
   })
 };
 
-exports.initLifeGuardCard = function(req, res){
+exports.initLifeGuardCard = function(req, res) {
   LifeGuardCard.clean(function () {
     var obj = xlsx.parse('/Users/hh/Downloads/cards/生命牌与行星守护牌.xlsx'),
       data = obj[0]['data'];
@@ -506,7 +503,7 @@ exports.initLifeGuardCard = function(req, res){
   })
 };
 
-exports.initSolution = function(req, res){
+exports.initSolution = function(req, res) {
   Solution.clean(function () {
     var obj = xlsx.parse('/Users/hh/Downloads/cards/牌阵解读20150530.xlsx'),
       data = obj[0]['data'];
@@ -596,5 +593,33 @@ exports.initConstellation = function(req, res) {
       });
     }
     res.send('星座解释 imported.')
+  })
+};
+
+exports.longTerm = function(req, res) {
+  var birthday = new Date(req.body.birthday),
+    someday = new Date(req.body.someday),
+    age = get_age(birthday, someday),
+    month = birthday.getMonth() + 1,
+    date = birthday.getDate(),
+    str_birth = String(month * 100 + date);
+
+  LifeGuardCard.findOne(str_birth, function(err, life_guard_card) {
+    var life_card = life_guard_card['life_card'];
+    Deck.getOne(life_card, age, function (err, deck) {
+      var spec = 'long_term',
+        card = deck['cards'][spec][0];
+      Solution.findOne(card, function (err, solution) {
+        var response = {
+          'birthday': birthday,
+          'someday': someday,
+          'age': age,
+          'life_card': life_card,
+          'card': card,
+          'explanation': solution[spec]
+        };
+        res.send(response)
+      })
+    })
   })
 };
