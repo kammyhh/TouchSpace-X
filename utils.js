@@ -16,14 +16,12 @@ var User = require('./models/user.js');
 var Version = require('./models/version.js');
 
 //data format/now
-var get_age = function(birthday) {
+var get_age = function(birthday, today) {
   var birth = new Date(birthday),
     year = birth.getFullYear(),
     month = birth.getMonth()+ 1,
     date = birth.getDate(),
-  //nowaday = Date.now(),
-    nowaday = 1507318888388,
-    now = new Date(nowaday),
+    now = new Date(today),
     y = now.getFullYear(),
     m = now.getMonth()+ 1,
     d = now.getDate(),
@@ -136,7 +134,7 @@ exports.login = function(req, res){
 
 exports.register = function(req, res){
   var nickname = req.header('nickname'),
-    birthday = parseInt(req.header('birthday')),
+    birthday = req.header('birthday'),
     gender = req.header('gender'),
     phone = req.header('phone'),
     email = req.header('email'),
@@ -208,7 +206,7 @@ exports.userInfo = function(req, res){
     console.log(user);
     if (user != null) {
       var birthday = user['detail']['birthday'],
-        age = get_age(birthday),
+        age = get_age(birthday, Date.now()),
         secret_number = get_secret_number(birthday);
       Deck.getOne(user['detail']['life_card'], age, function (err, deck) {
         var response = {
@@ -244,7 +242,7 @@ exports.contactInfo = function(req, res){
     if (user != null) {
       User.info(contactId, function (err, contact) {
         var birthday = contact['detail']['birthday'],
-          age = get_age(birthday);
+          age = get_age(birthday, Date.now());
         Deck.getOne(contact['detail']['life_card'], age, function (err, deck) {
           var response = {
             status: 'OK',
@@ -301,8 +299,8 @@ exports.uploadAvatar = function(req, res){
 };
 
 exports.cardSolution = function(req, res){
-  var card = req.query['card'],
-    spec =req.query['spec'];
+  var card = req.body.card,
+    spec =req.body.spec;
   Solution.findOne(card, function(err, solution){
     if (solution != null) {
       response = {
@@ -323,8 +321,8 @@ exports.cardSolution = function(req, res){
 };
 
 exports.constellationInfo = function(req, res){
-  var constellation = '双鱼座';
-  var userId = '5590b6e25eb9114602418311';
+  var constellation = req.body.constellation,
+    userId = req.body.userId;
   Constellation.find(constellation, function(err, result){
     User.countConstellation(constellation, function(err, count) {
       User.countActiveInConstellation(constellation, function (err, active) {

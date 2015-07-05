@@ -25,7 +25,7 @@ router.get('/login', function(req, res) {
 });
 
 router.get('/register', function(req, res) {
-  tils.register(req, res)
+  utils.register(req, res)
 });
 
 router.get('/userInfo', function(req, res) {
@@ -40,11 +40,11 @@ router.post('/uploadAvatar', function(req, res) {
   utils.uploadAvatar(req, res)
 });
 
-router.get('/cardSolution', function(req, res) {
+router.post('/cardSolution', function(req, res) {
   utils.cardSolution(req, res)
 });
 
-router.get('/constellationInfo', function(req, res) {
+router.post('/constellationInfo', function(req, res) {
   utils.constellationInfo(req, res)
 });
 
