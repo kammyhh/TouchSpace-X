@@ -18,6 +18,7 @@
     "connect-flash": "0.1.1",
     "mongoose":"*",
     "node-xlsx":"*",
-    "connect-multiparty":"*"
+    "connect-multiparty":"*",
+    "async":"*"
   }
 }

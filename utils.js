@@ -5,15 +5,28 @@
 var crypto = require('crypto');
 var fs= require('fs');
 var xlsx = require('node-xlsx');
+var async = require('async');
 
 var Characteristic = require('./models/characteristic.js');
 var Constellation = require('./models/constellation.js');
 var Deck = require('./models/deck.js');
 var LifeGuardCard = require('./models/life_guard_card.js');
+var Match = require('./models/match.js');
 var Message = require('./models/message.js');
 var Solution = require('./models/solution.js');
 var User = require('./models/user.js');
 var Version = require('./models/version.js');
+
+
+var if_contains = function(arr, obj) {
+  var i = arr.length;
+  while (i--) {
+    if (arr[i] === obj) {
+      return true;
+    }
+  }
+  return false;
+};
 
 var get_age = function(birthday, today) {
   var birth = new Date(birthday),
@@ -99,17 +112,212 @@ var get_suit = {
   '方': 'D'    //方块
 };
 
+var get_distance = function(lat1,lng1,lat2,lng2){
+
+  var EARTH_RADIUS = 6378137.0;    //单位M
+  var PI = Math.PI;
+
+  function getRad(d){
+    return d*PI/180.0;
+  }
+
+  var f = getRad((lat1 + lat2)/2);
+  var g = getRad((lat1 - lat2)/2);
+  var l = getRad((lng1 - lng2)/2);
+
+  var sg = Math.sin(g);
+  var sl = Math.sin(l);
+  var sf = Math.sin(f);
+
+  var s,c,w,r,d,h1,h2;
+  var a = EARTH_RADIUS;
+  var fl = 1/298.257;
+
+  sg = sg*sg;
+  sl = sl*sl;
+  sf = sf*sf;
+
+  s = sg*(1-sl) + (1-sf)*sl;
+  c = (1-sg)*(1-sl) + sf*sl;
+
+  if (c == 0) return 0;
+
+  w = Math.atan(Math.sqrt(s/c));
+
+  if (w == 0) return 0;
+  r = Math.sqrt(s*c)/w;
+  d = 2*w*a;
+  h1 = (3*r -1)/2/c;
+  h2 = (3*r +1)/2/s;
+
+  return d*(1 + fl*(h1*sf*(1-sg) - h2*(1-sf)*sg));
+};
+
+var get_period = function(birthday, today) {
+  //need to be verify
+  var birth = new Date(birthday),
+    month = birth.getMonth()+ 1,
+    date = birth.getDate(),
+    now = new Date(today),
+    m = now.getMonth()+ 1,
+    d = now.getDate(),
+    p,
+    period = {
+      1: 'Mercury',
+      2: 'Venus',
+      3: 'Mars',
+      4: 'Jupiter',
+      5: 'Saturn',
+      6: 'Uranus',
+      7: 'Neptune'
+    };
+  if (month > m) m += 12;
+  p = parseInt(((m - month) * 365 / 12 + d - date) / 52) + 1;
+  return period[p];
+};
+
+var get_match_value = function(user, target) {
+
+  var value, distance, card, number, contact, constellation;
+  var sn_user, sn_target, dis;
+  var comp = {
+    1: 2,
+    2: 8,
+    3: 6,
+    4: 7,
+    5: 4,
+    6: 3,
+    7: 9,
+    8: 5,
+    9: 1
+  };
+  var deck = user['deck'];
+  var period = get_period(user['detail']['birthday'], Date.now());
+
+  if (if_contains(deck['long_term'], target['detail']['life_card'])) {
+    card = 20;
+  } else if (if_contains(deck['long_term'], target['detail']['guard_card'])) {
+    card = 19;
+  } else if (if_contains(deck['Pluto'], target['detail']['life_card'])) {
+    card = 18;
+  } else if (if_contains(deck['Pluto'], target['detail']['guard_card'])) {
+    card = 17;
+  } else if (if_contains(deck['result'], target['detail']['life_card'])) {
+    card = 16;
+  } else if (if_contains(deck['result'], target['detail']['guard_card'])) {
+    card = 15;
+  } else if (if_contains(deck[period], target['detail']['life_card'])) {
+    card = 9;
+  } else if (if_contains(deck[period], target['detail']['guard_card'])) {
+    card = 8;
+  } else {
+    card = 0;
+  }
+
+  dis = get_distance(user['last_login']['x'], user['last_login']['y'],
+    target['last_login']['x'], target['last_login']['y']);
+  //100m 31, 1km 30, 10km 22, 20km 16, 40km 8, 50km 5, 100km 1
+  distance = parseInt(Math.pow(2, 5 - (dis / 20000)));
+  if (distance < 0) distance = 0;
+
+  sn_user = get_secret_number(user['detail']['birthday']);
+  sn_target = get_secret_number(target['detail']['birthday']);
+  if (sn_user == sn_target) {
+    number = 4;
+  } else if (sn_target == comp[sn_user]) {
+    number = 3;
+  } else {
+    number = 0;
+  }
+
+  if (if_contains(user['contact'], target['detail']['phone'])
+    || if_contains(target['contact'], user['detail']['phone'])) {
+    contact = 2;
+  } else {
+    contact = 0;
+  }
+
+  if (user['detail']['constellation'] == target['detail']['constellation']) {
+    constellation = 1;
+  } else {
+    constellation = 0;
+  }
+
+  value = distance + card + number + contact + constellation;
+  return value;
+};
+
+var random_array = function(arr) {
+  var a = arr;
+  var rand_arr = [], rand;
+  for (var i = 0; i < arr.length; i++) {
+    rand = parseInt(Math.random() * (arr.length - i));
+    rand_arr[i] = a[rand];
+    a = a.slice(0, rand).concat(a.slice(rand + 1));
+  }
+  return rand_arr;
+};
+
+exports.test = function(req, res) {
+  var arr = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+  res.send(random_array(arr))
+};
+
+exports.findMatch = function(req, res) {
+  User.get_all(function (results) {
+    results = random_array(results);
+    var matches = [];
+    var l = results.length;
+    for (var i = 0; i < parseInt(l / 2); i++) {
+      var max=0, begin = 0, end = 1;
+      for (var j = 1; j < l - 2 * i; j++) {
+        var value = get_match_value(results[0], results[j]);
+        if (value>max) {
+          max = value;
+          begin = 0;
+          end = j;
+        }
+      }
+      matches[i] = {
+        begin: results[begin]['detail']['phone'],
+        end: results[end]['detail']['phone'],
+        value: max,
+        status: 0
+      };
+      console.log(matches[i]);
+
+      var newMatch = new Match({
+        begin: results[begin]['detail']['phone'],
+        end: results[end]['detail']['phone'],
+        value: max,
+        status: 0
+      });
+      newMatch.save(function (err, match) {
+        console.log(match);
+      });
+      results = results.slice(0, end).concat(results.slice(end + 1));
+      results = results.slice(1);
+    }
+    var response = {
+      matches: matches
+    };
+    console.log(response);
+    res.send(response)
+  })
+};
+
 exports.login = function(req, res) {
   var username = req.header('username'),
     password = req.header('password'),
     ip = req['_remoteAddress'].split(':').pop();
   User.login(username, password, function (err, user) {
-    console.log(user);
+    if (err) throw err;
     if (user != null) {
       var userId = user['_id'],
         plaintext = user['username'] + Date.now(),
         token = crypto.createHash('md5').update(plaintext).digest('hex');
       User.setLogin(userId, token, ip, function () {
+        if (err) throw err;
         var response = {
           status: 'OK',
           data: {
@@ -153,44 +361,56 @@ exports.register = function(req, res) {
         constellation = get_constellation(int_birth);
 
       LifeGuardCard.findOne(str_birth, function (err, life_guard_card) {
-        var life_card = life_guard_card['life_card'],
-          len = life_card.length,
-          pre = life_card.substr(0, len - 2) + get_suit[life_card[len - 2]];
-        User.countName(pre, function (err, count) {
-          var username = String(get_secret_number(birthday)) +
-            pre + String(count + 1);
-          var newUser = new User({
-            username: username,
-            password: password,
-            token: "empty",
-            detail: {
-              nickname: nickname,
-              birthday: birthday,
-              gender: gender,
-              phone: phone,
-              email: email,
-              life_card: life_guard_card['life_card'],
-              guard_card: life_guard_card['guard_card'],
-              constellation: constellation,
-              energy: 0,
-              flag: 0
-            },
-            last_login: {
-              ip: '1.1.1.1',
-              time: Date.now()
-            }
-          });
-          newUser.save(function (err, user) {
-            console.log(user);
-            var response = {
-              status: 'OK',
-              data: {
-                username: user['username']
+        if (err) throw err;
+        if (life_guard_card!=null){
+          var life_card = life_guard_card['life_card'],
+            len = life_card.length,
+            pre = life_card.substr(0, len - 2) + get_suit[life_card[len - 2]];
+          User.countName(pre, function (err, count) {
+            var username = String(get_secret_number(birthday)) +
+              pre + String(count + 1);
+            var newUser = new User({
+              username: username,
+              password: password,
+              token: "empty",
+              detail: {
+                nickname: nickname,
+                birthday: birthday,
+                gender: gender,
+                phone: phone,
+                email: email,
+                life_card: life_guard_card['life_card'],
+                guard_card: life_guard_card['guard_card'],
+                constellation: constellation,
+                energy: 0,
+                flag: 0
+              },
+              last_login: {
+                ip: '1.1.1.1',
+                x: 0,
+                y: 0,
+                z: 0,
+                time: Date.now()
               }
-            };
-            res.send(response)
+            });
+            newUser.save(function (err, user) {
+              console.log(user);
+              var response = {
+                status: 'OK',
+                data: {
+                  username: user['username']
+                }
+              };
+              res.send(response)
+            });
           });
-        });
+        } else {
+          var response = {
+            status: 'Invalid request',
+            data: {}
+          };
+          res.send(response)
+        }
       });
     }
   })
@@ -200,25 +420,45 @@ exports.userInfo = function(req, res) {
   var userId = req.header('userId'),
     token = req.header('token');
   User.auth(userId, token, function (err, user) {
-    console.log(user);
+    if (err) throw err;
     if (user != null) {
       var birthday = user['detail']['birthday'],
         age = get_age(birthday, Date.now()),
         secret_number = get_secret_number(birthday);
       Deck.getOne(user['detail']['life_card'], age, function (err, deck) {
-        var response = {
-          status: 'OK',
-          data: {
-            info: {
-              detail: user['detail'],
-              last_login: user['last_login']
-            },
-            secret_number: secret_number,
-            age: age,
-            deck: deck
-          }
-        };
-        res.send(response)
+        if (err) throw err;
+        if (deck!=null) {
+          var response = {
+            status: 'OK',
+            data: {
+              info: {
+                detail: {
+                  birthday: user['detail']['birthday'],
+                  flag: user['detail']['flag'],
+                  energy: user['detail']['energy'],
+                  constellation: user['detail']['constellation'],
+                  guard_card: user['detail']['guard_card'],
+                  life_card: user['detail']['life_card'],
+                  email: user['detail']['email'],
+                  phone: user['detail']['phone'],
+                  gender: user['detail']['gender'],
+                  nickname: user['detail']['nickname']
+                },
+                last_login: user['last_login']
+              },
+              secret_number: secret_number,
+              age: age,
+              deck: deck
+            }
+          };
+          res.send(response)
+        } else {
+          response = {
+            status: 'Invalid request',
+            data: {}
+          };
+          res.send(response)
+        }
       });
     } else {
       var response = {
@@ -235,20 +475,38 @@ exports.contactInfo = function(req, res) {
     token = req.header('token'),
     contactId = req.header('contactId');
   User.auth(userId, token, function (err, user) {
-    console.log(user);
+    if (err) throw err;
     if (user != null) {
       User.info(contactId, function (err, contact) {
-        var birthday = contact['detail']['birthday'],
-          age = get_age(birthday, Date.now());
-        Deck.getOne(contact['detail']['life_card'], age, function (err, deck) {
-          var response = {
-            status: 'OK',
-            data: {
-              deck: deck
+        if (err) throw err;
+        if (contact!=null) {
+          var birthday = contact['detail']['birthday'],
+            age = get_age(birthday, Date.now());
+          Deck.getOne(contact['detail']['life_card'], age, function (err, deck) {
+            if (err) throw err;
+            if (deck!=null) {
+              var response = {
+                status: 'OK',
+                data: {
+                  deck: deck
+                }
+              };
+              res.send(response)
+            } else {
+              response = {
+                status: 'Invalid request',
+                data: {}
+              };
+              res.send(response)
             }
+          })
+        }  else {
+          var response = {
+            status: 'Invalid request',
+            data: {}
           };
           res.send(response)
-        })
+        }
       })
     } else {
       var response = {
@@ -264,6 +522,7 @@ exports.uploadAvatar = function(req, res) {
   var userId = req.header('userId'),
     token = req.header('token');
   User.info(userId, token, function (err, user) {
+    if (err) throw err;
     if (user != null) {
       var tmp_path = req.files.thumbnail.path,
         target_name = user['username'] + '.' + req.files.thumbnail.name.split('.')[1],
@@ -274,6 +533,7 @@ exports.uploadAvatar = function(req, res) {
         fs.unlink(tmp_path, function () {
           if (err) throw err;
           User.setAvatar(user['_id'], avatar, function () {
+            if (err) throw err;
             response = {
               status: 'OK',
               data: {
@@ -299,6 +559,7 @@ exports.cardSolution = function(req, res) {
   var card = req.body.card,
     spec = req.body.spec;
   Solution.findOne(card, function (err, solution) {
+    if (err) throw err;
     if (solution != null) {
       response = {
         status: 'OK',
@@ -320,85 +581,179 @@ exports.cardSolution = function(req, res) {
 exports.constellationInfo = function(req, res) {
   var constellation = req.body.constellation,
     userId = req.body.userId;
+  console.log(constellation, userId);
+  console.log(typeof (userId));
   Constellation.find(constellation, function (err, result) {
-    User.countConstellation(constellation, function (err, count) {
-      User.countActiveInConstellation(constellation, function (err, active) {
-        User.rankInConstellation(userId, constellation, function (err, rank) {
-          Message.sendFromConstellation(constellation, function (err, msg) {
-            User.brightestInConstellation(constellation, function (err, user) {
-              var brightest = user['detail']['nickname'];
-              User.countGenderInConstellation(1, constellation, function (err, male) {
-                var male = male, female = count - male;
-                var response = {
-                  status: 'OK',
-                  data: {
-                    explanation: result,
-                    count: count,
-                    active: active,
-                    rank: rank,
-                    msg: msg,
-                    brightest: brightest,
-                    male: male,
-                    female: female
-                  }
-                };
-                console.log(response);
-                res.send(response)
+    if (err) throw err;
+    if (result!=null) {
+      User.countConstellation(constellation, function (err, count) {
+        if (err) throw err;
+        if (count!=null) {
+          User.countActiveInConstellation(constellation, function (err, active) {
+            if (err) throw err;
+            if (active!=null) {
+              User.rankInConstellation(userId, constellation, function (err, rank) {
+                if (err) throw err;
+                if (rank!=null) {
+                  Message.sendFromConstellation(constellation, function (err, msg) {
+                    if (err) throw err;
+                    if (msg!=null) {
+                      User.brightestInConstellation(constellation, function (err, user) {
+                        if (err) throw err;
+                        if (user != null) {
+                          var brightest = user['detail']['nickname'];
+                          User.countGenderInConstellation(1, constellation, function (err, man) {
+                            var male = man, female = count - male;
+                            var response = {
+                              status: 'OK',
+                              data: {
+                                constellation: constellation,
+                                duration: result.duration,
+                                content: result.content,
+                                count: count,
+                                active: active,
+                                rank: rank,
+                                msg: msg,
+                                brightest: brightest,
+                                male: male,
+                                female: female
+                              }
+                            };
+                            console.log(response);
+                            res.send(response)
+                          })
+                        } else {
+                          var response = {
+                            status: 'Not found',
+                            data: {}
+                          };
+                          res.send(response)
+                        }
+                      })
+                    } else {
+                      var response = {
+                        status: 'Invalid request',
+                        data: {}
+                      };
+                      res.send(response)
+                    }
+                  });
+                } else {
+                  var response = {
+                    status: 'Invalid request',
+                    data: {}
+                  };
+                  res.send(response)
+                }
               })
-            })
-          });
-        })
+            } else {
+              var response = {
+                status: 'Invalid request',
+                data: {}
+              };
+              res.send(response)
+            }
+          })
+        } else {
+          var response = {
+            status: 'Invalid request',
+            data: {}
+          };
+          res.send(response)
+        }
       })
-    })
-  })
-};
-/*
- constellationInfo(userId, constellation)
- 星座解释explanation 星系人数count 活跃指数active/count
- 能量排名rank 产生消息msg 最亮星体brightest 男女数量/比较
- */
-
-exports.sendMessage = function(req, res) {
-  var userId = req.header('userId'),
-    token = req.header('token');
-  User.auth(userId, token, function (err, user) {
-    if (user != null) {
-      var username = user['username'],
-        constellation = user['detail']['constellation'],
-        to = req.body.to,
-        msg = req.body.msg;
-      var message = {
-        from: {
-          username: username,
-          constellation: constellation
-        },
-        to: to,
-        message: msg,
-        isRead: 0,
-        date: Date.now()
-      };
-      new Message(message).save(function (err, record) {
-        console.log(record);
-      });
-      var response = {
-        status: 'OK',
-        data: {}
-      };
-      res.send(response)
     } else {
-      response = {
-        status: 'Token error',
+      var response = {
+        status: 'Invalid request',
         data: {}
       };
       res.send(response)
     }
-  });
+    User.countConstellation(constellation, function (err, count) {
+      if (err) throw err;
+      if (count!=null) {
+        User.countActiveInConstellation(constellation, function (err, active) {
+          if (err) throw err;
+          if (active!=null) {
+            User.rankInConstellation(userId, constellation, function (err, rank) {
+              if (err) throw err;
+              if (rank!=null) {
+                Message.sendFromConstellation(constellation, function (err, msg) {
+                  if (err) throw err;
+                  if (msg!=null) {
+                    User.brightestInConstellation(constellation, function (err, user) {
+                      if (err) throw err;
+                      if (user != null) {
+                        var brightest = user['detail']['nickname'];
+                        User.countGenderInConstellation(1, constellation, function (err, man) {
+                          var male = man, female = count - male;
+                          var response = {
+                            status: 'OK',
+                            data: {
+                              constellation: constellation,
+                              duration: result.duration,
+                              content: result.content,
+                              count: count,
+                              active: active,
+                              rank: rank,
+                              msg: msg,
+                              brightest: brightest,
+                              male: male,
+                              female: female
+                            }
+                          };
+                          console.log(response);
+                          res.send(response)
+                        })
+                      } else {
+                        var response = {
+                          status: 'Not found',
+                          data: {}
+                        };
+                        res.send(response)
+                      }
+                    })
+                  } else {
+                    var response = {
+                      status: 'Invalid request',
+                      data: {}
+                    };
+                    res.send(response)
+                  }
+                });
+              } else {
+                var response = {
+                  status: 'Invalid request',
+                  data: {}
+                };
+                res.send(response)
+              }
+            })
+          } else {
+            var response = {
+              status: 'Invalid request',
+              data: {}
+            };
+            res.send(response)
+          }
+        })
+      } else {
+        var response = {
+          status: 'Invalid request',
+          data: {}
+        };
+        res.send(response)
+      }
+
+    })
+  })
 };
 
 exports.receiveMessage = function(req, res) {
   var userId = req.header('userId'),
     token = req.header('token');
   User.auth(userId, token, function (err, user) {
+    if (err) throw err;
     if (user != null) {
       var username = user['username'];
       Message.receive(username, function (err, record) {
@@ -418,6 +773,120 @@ exports.receiveMessage = function(req, res) {
     }
   })
 };
+
+exports.receiveMessage = function(req, res) {
+  var userId = req.header('userId'),
+    token = req.header('token');
+  User.auth(userId, token, function (err, user) {
+    if (err) throw err;
+    if (user != null) {
+      var username = user['username'];
+      Message.receive(username, function (err, record) {
+        console.log(record);
+        var response = {
+          status: 'OK',
+          data: record
+        };
+        res.send(response)
+      })
+    } else {
+      var response = {
+        status: 'Token error',
+        data: {}
+      };
+      res.send(response)
+    }
+  })
+};
+
+exports.longTerm = function(req, res) {
+  var birthday = new Date(req.body.birthday),
+    someday = new Date(req.body.someday),
+    age = get_age(birthday, someday),
+    month = birthday.getMonth() + 1,
+    date = birthday.getDate(),
+    str_birth = String(month * 100 + date);
+
+  LifeGuardCard.findOne(str_birth, function(err, life_guard_card) {
+    if (err) throw err;
+    if (life_guard_card!=null) {
+      var life_card = life_guard_card['life_card'];
+      Deck.getOne(life_card, age, function (err, deck) {
+        if (err) throw err;
+        if (deck!=null) {
+          var spec = 'long_term',
+            card = deck['cards'][spec][0];
+          Solution.findOne(card, function (err, solution) {
+            if (err) throw err;
+            if (solution!=null) {
+              var response = {
+                'birthday': birthday,
+                'someday': someday,
+                'age': age,
+                'life_card': life_card,
+                'card': card,
+                'explanation': solution[spec]
+              };
+              res.send(response)
+            } else {
+              response = {
+                status: 'Invalid request',
+                data: {}
+              };
+              res.send(response)
+            }
+          })
+        } else {
+          var response = {
+            status: 'Invalid request',
+            data: {}
+          };
+          res.send(response)
+        }
+      })
+    }  else {
+      var response = {
+        status: 'Invalid request',
+        data: {}
+      };
+      res.send(response)
+    }
+  })
+};
+
+exports.promotion = function(req, res) {
+  var birthday = new Date(req.query.birthday),
+    someday = new Date(Date.now()),
+    age = get_age(birthday, someday),
+    month = birthday.getMonth() + 1,
+    date = birthday.getDate(),
+    str_birth = String(month * 100 + date);
+  LifeGuardCard.findOne(str_birth, function(err, life_guard_card) {
+    var life_card = life_guard_card['life_card'];
+    Deck.getOne(life_card, age, function (err, deck) {
+      var spec = 'long_term',
+        card = deck['cards'][spec][0];
+      if (err) throw err;
+      if (deck!=null) {
+        Solution.findOne(card, function (err, solution) {
+          var txt = '我们知道你的\n年龄：' + age + '\n星座：' + get_constellation(month * 100 + date)
+            + '\n生命数字：' + get_secret_number(birthday) + '\n我们还知道你今年所面临的\n一些事情：\n\n' + solution[spec];
+          res.send(txt + '\n（此处还有一万字已略去）')
+        })
+      }  else {
+        var response = {
+          status: 'Invalid request',
+          data: {}
+        };
+        res.send(response)
+      }
+    })
+  })
+};
+
+
+
+//initialization
 
 exports.initDeck = function(req, res) {
   Deck.clean(function () {
@@ -523,7 +992,7 @@ exports.initSolution = function(req, res) {
         environment: data[i][12],
         substitution: data[i][13]
       };
-      console.log(record)
+      console.log(record);
       new Solution(record).save(function (err, record) {
         console.log(record);
       });
@@ -586,8 +1055,8 @@ exports.initConstellation = function(req, res) {
       }
     ];
     for (var i = 0; i < cons.length; i++) {
-      var record = cons[i]
-      console.log(record)
+      var record = cons[i];
+      console.log(record);
       new Constellation(record).save(function (err, record) {
         console.log(record);
       });
@@ -596,30 +1065,4 @@ exports.initConstellation = function(req, res) {
   })
 };
 
-exports.longTerm = function(req, res) {
-  var birthday = new Date(req.body.birthday),
-    someday = new Date(req.body.someday),
-    age = get_age(birthday, someday),
-    month = birthday.getMonth() + 1,
-    date = birthday.getDate(),
-    str_birth = String(month * 100 + date);
-
-  LifeGuardCard.findOne(str_birth, function(err, life_guard_card) {
-    var life_card = life_guard_card['life_card'];
-    Deck.getOne(life_card, age, function (err, deck) {
-      var spec = 'long_term',
-        card = deck['cards'][spec][0];
-      Solution.findOne(card, function (err, solution) {
-        var response = {
-          'birthday': birthday,
-          'someday': someday,
-          'age': age,
-          'life_card': life_card,
-          'card': card,
-          'explanation': solution[spec]
-        };
-        res.send(response)
-      })
-    })
-  })
-};
+exports.get_age = get_age;

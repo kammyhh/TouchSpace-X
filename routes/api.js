@@ -5,7 +5,7 @@ var utils = require('../utils');
 
 
 router.get('/', function(req, res) {
-  res.send('this is an api~'+typeof(Date.now())+':'+Date.now());
+  res.send('Date:'+ new Date(Date.now()));
 });
 
 router.get('/testVersion', function(req, res) {
@@ -79,6 +79,18 @@ router.get('/init/constellation', function(req, res) {
 
 router.post('/longTerm', function(req, res) {
   utils.longTerm(req, res)
+});
+
+router.get('/promotion', function(req, res) {
+  utils.promotion(req, res)
+});
+
+router.get('/findMatch', function(req, res) {
+  utils.findMatch(req, res)
+});
+
+router.get('/test', function(req, res) {
+  utils.test(req, res)
 });
 
 module.exports = router;

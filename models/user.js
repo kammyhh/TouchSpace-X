@@ -2,6 +2,8 @@
  * Created by hh on 15/6/14.
  */
 var mongoose = require('./mongoose.js');
+var Deck = require('./deck.js');
+var Utils = require('../utils.js');
 var userSchema = new mongoose.Schema({
   username: String,
   password: String,
@@ -14,15 +16,22 @@ var userSchema = new mongoose.Schema({
     phone: String,
     email: String,
     avatar: String,
-    life_card: String,
+    life_card: {
+      type: String,
+      ref: 'Deck'
+    },
     guard_card: String,
     energy: Number,
     constellation: String,
     tags: String,
     flag: Number
   },
-  last_login:{
+  contact: Array,
+  last_login: {
     ip: String,
+    x: Number,
+    y: Number,
+    z: Number,
     time: {type: Date, default: Date.now()}
   }
 }, {
@@ -36,6 +45,7 @@ function User(user) {
   this.password = user.password;
   this.token = user.token;
   this.detail = user.detail;
+  this.contact = user.contact;
   this.last_login = user.last_login;
 }
 
@@ -45,6 +55,7 @@ User.prototype.save = function(callback) {
     password: this.password,
     token: this.token,
     detail: this.detail,
+    contact: this.contact,
     last_login: this.last_login
   };
 
@@ -180,5 +191,36 @@ User.countGenderInConstellation = function(gender, constellation, callback){
   })
 };
 
+User.get_all = function(callback){
+  var results = [];
+    userModel.find({}, function(err, users) {
+      if (err) {
+        return callback(err);
+      }
+      var form = function(callback) {
+        users.forEach(function(user){
+          Deck.getOne(user['detail']['life_card'],
+            Utils.get_age(user['detail']['birthday'], Date.now()), function(err, deck){
+              callback(user, deck)
+            })
+        })
+      };
+      var send = function(callback) {
+        form(function(user, deck){
+          var result = {
+            last_login: user['last_login'],
+            contact: user['contact'],
+            detail: user['detail'],
+            deck: deck['cards']
+          }
+          results.push(result);
+          callback(results)
+        })
+      };
+      send(function(results){
+        if (results.length == users.length) callback(results)
+      });
+    })
+};
 
 module.exports = User;

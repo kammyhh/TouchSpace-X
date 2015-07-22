@@ -1,0 +1,3176 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="chrome=1,IE=edge" />
+  <meta name="viewport" content="user-scalable=no, width=640" />
+  <script src="javascripts/createjs.min.js"></script>
+
+  <script src="javascripts/jquery-1.9.1.js"></script>
+  <script src="javascripts/hammer.min.js"></script>
+  <script src="javascripts/iscroll.js"></script>
+  <script src="javascripts/hammer.fakemultitouch.js"></script>
+  <script src="javascripts/drum.js"></script>
+  <link rel="stylesheet" href="stylesheets/drum.css"></link>
+  <link rel="stylesheet" href="stylesheets/style.css"></link>
+  <audio id="bgm" src="/audios/BGM.mp3" preload="auto" loop="loop"></audio>
+
+
+  <title>h5</title>
+  <style>
+    html, body {
+      background: url(pics/bg.jpg);
+      width:  100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+  </style>
+  <script>
+
+    function LoadingBar(id)
+    {
+      this.loadbar = $("#" + id);
+      this.percentEle = $(".percent", this.loadbar);
+      this.percentNumEle = $(".percentNum", this.loadbar);
+      this.max = 100;
+      this.currentProgress = 0;
+    }
+    LoadingBar.prototype = {
+      constructor: LoadingBar,
+      setMax: function (maxVal)
+      {
+        this.max = maxVal;
+      },
+      setProgress: function (val)
+      {
+        if (val >= this.max)
+        {
+          val = this.max;
+        }
+        this.currentProgress = parseInt((val / this.max) * 100) + "%";
+        this.percentEle.width(this.currentProgress);
+        this.percentNumEle.text(this.currentProgress);
+      }
+    };
+
+
+//    pre-preload
+    img1 = new Image();
+    img1.src = "pics/circle1.png";
+    img2 = new Image();
+    img2.src = "pics/circle2.png";
+
+//    preload
+    var queue = new createjs.LoadQueue();
+    queue.on("complete", handleComplete, this);
+    queue.on("progress", handleProgress, this);
+    queue.loadManifest([
+      {id: "circle1", src:"pics/circle1.png"},
+      {id: "circle2", src:"pics/circle2.png"},
+      {id: "1992", src:"pics/1992.png"},
+      {id: "1993", src:"pics/1993.png"},
+      {id: "1994", src:"pics/1994.png"},
+      {id: "anonymous", src:"pics/anonymous.png"},
+      {id: "birthday", src:"pics/birthday.png"},
+      {id: "birthday_frame", src:"pics/birthday_frame.png"},
+      {id: "china", src:"pics/china.png"},
+      {id: "china2", src:"pics/china2.png"},
+      {id: "dot", src:"pics/dot.png"},
+      {id: "dot_line", src:"pics/dot_line.png"},
+      {id: "download_frame", src:"pics/download_frame.png"},
+      {id: "earth", src:"pics/earth.png"},
+      {id: "earth2", src:"pics/earth2.png"},
+      {id: "end", src:"pics/end.png"},
+      {id: "line", src:"pics/line.png"},
+      {id: "linking_left", src:"pics/linking_left.png"},
+      {id: "linking_right", src:"pics/linking_right.png"},
+      {id: "linking_x", src:"pics/linking_x.png"},
+      {id: "linking_y", src:"pics/linking_y.png"},
+      {id: "logo_bg", src:"pics/logo_bg.png"},
+      {id: "logo_star", src:"pics/logo_star.png"},
+      {id: "logo_x", src:"pics/logo_x.png"},
+      {id: "order", src:"pics/order.png"},
+      {id: "question", src:"pics/question.png"},
+      {id: "sun", src:"pics/sun.png"},
+      {id: "timeline", src:"pics/timeline.png"},
+      {id: "TX_1", src:"pics/TX_1.png"},
+      {id: "TX_2", src:"pics/TX_2.png"},
+      {id: "TX_3", src:"pics/TX_3.png"},
+      {id: "TX_4", src:"pics/TX_4.png"},
+      {id: "TX_5", src:"pics/TX_5.png"},
+      {id: "TX_6", src:"pics/TX_6.png"},
+      {id: "TX_7", src:"pics/TX_7.png"},
+      {id: "TX_8", src:"pics/TX_8.png"},
+      {id: "TX_frame", src:"pics/TX_frame.png"},
+      {id: "TXL_1", src:"pics/TXL_1.png"},
+      {id: "TXL_2", src:"pics/TXL_2.png"},
+      {id: "TXL_3", src:"pics/TXL_3.png"},
+      {id: "TXL_4", src:"pics/TXL_4.png"}
+    ]);
+    function handleComplete() {
+      setTimeout("document.getElementById('loadBar01').style.display = 'none';play()", 500);
+    }
+    function handleProgress() {
+      load_progress = queue.progress * 100;
+    }
+
+    $(setTimeout(function ()
+    {
+      document.getElementById('loadBar01').style.display = 'block';
+      var loadbar = new LoadingBar("loadBar01");
+      var max = 100;
+      loadbar.setMax(max);
+      var time = setInterval(function ()
+      {
+        loadbar.setProgress(load_progress);
+        if (load_progress == max)
+        {
+          clearInterval(time);
+          return;
+        }
+      }, 10);
+    }, 800));
+
+//    init
+    var oriWidth = 640, oriHeight = 1136;
+    var ratio1, ratio2, ratio;
+    var canvas, stage;
+    var l, s, r, a, b, d, birthday_sto, input_sto, send_sto;
+
+    var loading_time = 3000,
+        loading_fade_time = 500,
+        loading_interval = loading_time / 4,
+        loading_duration = loading_time + loading_fade_time;
+
+    var text_lines_wait_time = 500,
+        text_fade_time = 2000,
+        text_line_height = 120,
+        n = 5,
+        subtitle_duration = text_lines_wait_time + text_fade_time * 5.25;
+
+    var relation_duration = 10000;
+
+    var max=0;
+    var sd=15;  //这里是控制速度的
+    var txt,lentxt,go;
+
+    function textlist() {
+      if (max>=lentxt){clearTimeout(go);}
+      document.getElementById('ta_content').innerHTML+=txt.substr(max,1);
+      document.getElementById('ta_content').innerHTML=document.getElementById('ta_content').innerHTML.replace(/\%\$/ig,'<br>');
+      document.getElementById('ta_content').innerHTML=document.getElementById('ta_content').innerHTML.replace(/\n/g, "<br>");
+      max++
+    }
+
+    function textticker() {
+      max = 0;
+      txt=document.getElementById('ta_content').innerHTML;
+      txt=txt.replace(/\<br\>/ig,'%$');
+      lentxt=txt.length;
+      document.getElementById('ta_content').innerHTML='';
+      go = setInterval(textlist, sd);
+    }
+
+    function getIndexForValue(elem, value) {
+      for (var i=0; i<elem.options.length; i++)
+        if (elem.options[i].value == value)
+          return i;
+    }
+
+    $(document).ready(function () {
+      $("select.date").drum({
+        interactive: false
+      });
+    });
+
+    function init() {
+
+      var myScroll;
+      myScroll = new iScroll( document.getElementById('ta_content') );
+
+      document.ontouchmove = function(e) { e.preventDefault(); return false; };
+      var bgm = document.getElementById("bgm");
+      document.getElementById("play").style.display = "block";
+      if (bgm.paused) { playBGM(); }
+      initCanvas();
+
+    }
+
+    function initCanvas(){
+      canvas = document.getElementById("demo");
+      stage = new createjs.Stage("demo");
+      createjs.MotionGuidePlugin.install();
+      window.onresize = resizeCanvas;
+      function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        ratio1 = canvas.width / oriWidth;
+        ratio2 = canvas.height / oriHeight;
+        if (ratio1 < ratio2){
+          ratio = ratio1;
+        } else {
+          ratio = ratio2;
+        }
+      }
+      resizeCanvas();
+      createjs.Ticker.setFPS(60);
+      createjs.Ticker.addEventListener("tick", stage);
+      l = setTimeout('loading()',0);
+    }
+
+    function clearAll(){
+
+      document.getElementById("content").style.visibility = "hidden";
+      document.getElementById("birthday").style.visibility = "hidden";
+      document.getElementById("datepicker").style.visibility = "hidden";
+      document.getElementById("input").style.display = "none";
+      document.getElementById("send").style.display = "none";
+      document.getElementById("download").style.display = "none";
+
+      stage.removeAllChildren();
+      clearTimeout(l);
+      clearTimeout(s);
+      clearTimeout(r);
+      clearTimeout(a);
+      clearTimeout(b);
+      clearTimeout(d);
+      clearTimeout(birthday_sto);
+      clearTimeout(input_sto);
+      clearTimeout(send_sto);
+
+    }
+
+    function play() {
+
+      clearAll();
+      s = setTimeout('subtitle()', 0);
+      r = setTimeout('relation()', subtitle_duration + 1000);
+      a = setTimeout('animation()', subtitle_duration + relation_duration + 1000);
+
+    }
+
+    function loading() {
+
+      var circle1 = new createjs.Bitmap(img1);
+      circle1.scaleX = ratio;
+      circle1.scaleY = ratio;
+      //  image width/2: 468/2 = 234
+      circle1.regX = 234;
+      circle1.regY = 234;
+      circle1.x = window.innerWidth/2;
+      circle1.y = window.innerHeight * 0.382;
+      stage.addChild(circle1);
+      createjs.Tween.get(circle1, {loop:true})
+          .to({rotation: -360}, loading_time);
+
+      var circle2 = new createjs.Bitmap(img2);
+      circle2.scaleX = ratio;
+      circle2.scaleY = ratio;
+      circle2.regX = 234;
+      circle2.regY = 234;
+      circle2.x = window.innerWidth/2;
+      circle2.y = window.innerHeight * 0.382;
+      stage.addChild(circle2);
+      createjs.Tween.get(circle2, {loop:true})
+          .to({rotation: 360}, loading_time);
+
+    }
+
+    function subtitle() {
+
+      document.getElementById('skip').style.display = 'block';
+
+      var txt_line1 = new createjs.Text("人们之间的联系千丝万缕，", "30px Arial", "#FFFFFF");
+      txt_line1.scaleX = ratio;
+      txt_line1.scaleY = ratio;
+      txt_line1.alpha = 0;
+      txt_line1.regX = 170;
+      txt_line1.regY = -10;
+      txt_line1.x = window.innerWidth * 0.5;
+      txt_line1.y = window.innerHeight * 0.5;
+      txt_line1.textBaseline = "alphabetic";
+      stage.addChild(txt_line1);
+
+      createjs.Tween.get(txt_line1)
+          .wait(text_lines_wait_time)
+          .to({alpha: 1}, text_fade_time * 0.25)
+          .wait(text_fade_time)
+          .to({scaleX: ratio * 0.93, scaleY: ratio * 0.93, y: txt_line1.y - text_line_height * 1, alpha: 0.5}, text_fade_time * 0.25)
+          .wait(text_fade_time)
+          .to({scaleX: ratio * 0.86, scaleY: ratio * 0.86, y: txt_line1.y - text_line_height * 1.8}, text_fade_time * 0.25)
+          .wait(text_fade_time)
+          .to({scaleX: ratio * 0.8, scaleY: ratio * 0.8, y: txt_line1.y - text_line_height * 2.4}, text_fade_time * 0.25)
+          .wait(text_fade_time)
+          .to({alpha: 0}, text_fade_time * 0.25);
+
+      var txt_line2 = new createjs.Text("并且不受时间空间的限制，", "30px Arial", "#FFFFFF");
+      txt_line2.scaleX = ratio;
+      txt_line2.scaleY = ratio;
+      txt_line2.alpha = 0;
+      txt_line2.regX = 170;
+      txt_line2.regY = -10;
+      txt_line2.x = window.innerWidth * 0.5;
+      txt_line2.y = window.innerHeight * 0.5;
+      txt_line2.textBaseline = "alphabetic";
+      stage.addChild(txt_line2);
+
+      createjs.Tween.get(txt_line2)
+          .wait(text_lines_wait_time)
+          .to({y: txt_line1.y + text_line_height}, 0)
+          .wait(text_fade_time * 1.25)
+          .to({y: txt_line1.y, alpha: 1}, text_fade_time * 0.25)
+          .wait(text_fade_time)
+          .to({scaleX: ratio * 0.93, scaleY: ratio * 0.93, y: txt_line1.y - text_line_height * 1, alpha: 0.5}, text_fade_time * 0.25)
+          .wait(text_fade_time)
+          .to({scaleX: ratio * 0.86, scaleY: ratio * 0.86, y: txt_line1.y - text_line_height * 1.8}, text_fade_time * 0.25)
+          .wait(text_fade_time)
+          .to({alpha: 0}, text_fade_time * 0.25);
+
+      var txt_line3 = new createjs.Text("尽管我们创造了所有的通讯技术，", "30px Arial", "#FFFFFF");
+      txt_line3.scaleX = ratio;
+      txt_line3.scaleY = ratio;
+      txt_line3.alpha = 0;
+      txt_line3.regX = 210;
+      txt_line3.regY = -10;
+      txt_line3.x = window.innerWidth * 0.5;
+      txt_line3.y = window.innerHeight * 0.5;
+      txt_line3.textBaseline = "alphabetic";
+      stage.addChild(txt_line3);
+
+      createjs.Tween.get(txt_line3)
+          .wait(text_lines_wait_time)
+          .to({y: txt_line1.y + text_line_height}, 0)
+          .wait(text_fade_time * 2.5)
+          .to({y: txt_line1.y, alpha: 1}, text_fade_time * 0.25)
+          .wait(text_fade_time)
+          .to({scaleX: ratio * 0.93, scaleY: ratio * 0.93, y: txt_line1.y - text_line_height * 1, alpha: 0.5}, text_fade_time * 0.25)
+          .wait(text_fade_time)
+          .to({alpha: 0}, text_fade_time * 0.25);
+
+      var txt_line4 = new createjs.Text("但是没有比人类的心灵感知更厉害的发明！", "30px Arial", "#FFFFFF");
+      txt_line4.scaleX = ratio;
+      txt_line4.scaleY = ratio;
+      txt_line4.alpha = 0;
+      txt_line4.regX = 270;
+      txt_line4.regY = -10;
+      txt_line4.x = window.innerWidth * 0.5;
+      txt_line4.y = window.innerHeight * 0.5;
+      txt_line4.textBaseline = "alphabetic";
+      stage.addChild(txt_line4);
+
+      createjs.Tween.get(txt_line4)
+          .wait(text_lines_wait_time)
+          .to({y: txt_line1.y + text_line_height}, 0)
+          .wait(text_fade_time * 3.75)
+          .to({y: txt_line1.y, alpha: 1}, text_fade_time * 0.25)
+          .wait(text_fade_time)
+          .to({alpha: 0}, text_fade_time * 0.25);
+    }
+
+    function relation() {
+
+      var txt_6du_down = new createjs.Text("世界这么大，你与任何一个人中间究竟隔几层", "30px Arial", "#FFFFFF");
+      txt_6du_down.scaleX = ratio;
+      txt_6du_down.scaleY = ratio;
+      txt_6du_down.alpha = 0;
+      txt_6du_down.regX = 300;
+      txt_6du_down.regY = -10;
+      txt_6du_down.x = window.innerWidth/2;
+      txt_6du_down.y = window.innerHeight * 0.9;
+      txt_6du_down.textBaseline = "alphabetic";
+      stage.addChild(txt_6du_down);
+      createjs.Tween.get(txt_6du_down)
+          .to({alpha: 1}, 1000)
+          .wait(8000)
+          .to({alpha: 0}, 1000);
+
+      var circle_6du_1_1 = new createjs.Bitmap(queue.getResult("circle1"));
+      circle_6du_1_1.scaleX = ratio * 5;
+      circle_6du_1_1.scaleY = ratio * 5;
+      circle_6du_1_1.alpha = 0;
+      circle_6du_1_1.regX = 234;
+      circle_6du_1_1.regY = 234;
+      circle_6du_1_1.x = window.innerWidth * 0.15;
+      circle_6du_1_1.y = window.innerHeight * 0.2;
+      stage.addChild(circle_6du_1_1);
+      createjs.Tween.get(circle_6du_1_1)
+          .wait(500)
+          .to({alpha: 1}, 0)
+          .to({scaleX: ratio * 0.6, scaleY: ratio * 0.6}, 50 )
+          .wait(650)
+          .to({rotation: 90}, 200)
+          .wait(8200)
+          .to({alpha: 0, scaleX: 0, scaleY: 0}, 200);
+
+      var circle_6du_1_2 = new createjs.Bitmap(queue.getResult("circle2"));
+      circle_6du_1_2.scaleX = ratio * 5;
+      circle_6du_1_2.scaleY = ratio * 5;
+      circle_6du_1_2.alpha = 0;
+      circle_6du_1_2.regX = 234;
+      circle_6du_1_2.regY = 234;
+      circle_6du_1_2.x = window.innerWidth * 0.15;
+      circle_6du_1_2.y = window.innerHeight * 0.2;
+      stage.addChild(circle_6du_1_2);
+      createjs.Tween.get(circle_6du_1_2)
+          .wait(600)
+          .to({alpha: 1}, 0)
+          .to({scaleX: ratio * 0.6, scaleY: ratio * 0.6}, 50)
+          .wait(550)
+          .to({rotation: -180}, 200)
+          .wait(8200)
+          .to({alpha: 0, scaleX: 0, scaleY: 0}, 200);
+
+      var circle_6du_2_1 = new createjs.Bitmap(queue.getResult("circle1"));
+      circle_6du_2_1.scaleX = ratio * 5;
+      circle_6du_2_1.scaleY = ratio * 5;
+      circle_6du_2_1.alpha = 0;
+      circle_6du_2_1.regX = 234;
+      circle_6du_2_1.regY = 234;
+      circle_6du_2_1.x = window.innerWidth * 0.15;
+      circle_6du_2_1.y = window.innerHeight * 0.65;
+      stage.addChild(circle_6du_2_1);
+      createjs.Tween.get(circle_6du_2_1)
+          .wait(700)
+          .to({alpha: 1}, 0)
+          .to({scaleX: ratio * 0.6, scaleY: ratio * 0.6}, 50 )
+          .wait(450)
+          .to({rotation: 90}, 200)
+          .wait(8200)
+          .to({alpha: 0, scaleX: 0, scaleY: 0}, 200);
+
+      var circle_6du_2_2 = new createjs.Bitmap(queue.getResult("circle2"));
+      circle_6du_2_2.scaleX = ratio * 5;
+      circle_6du_2_2.scaleY = ratio * 5;
+      circle_6du_2_2.alpha = 0;
+      circle_6du_2_2.regX = 234;
+      circle_6du_2_2.regY = 234;
+      circle_6du_2_2.x = window.innerWidth * 0.15;
+      circle_6du_2_2.y = window.innerHeight * 0.65;
+      stage.addChild(circle_6du_2_2);
+      createjs.Tween.get(circle_6du_2_2)
+          .wait(800)
+          .to({alpha: 1}, 0)
+          .to({scaleX: ratio * 0.6, scaleY: ratio * 0.6}, 50)
+          .wait(350)
+          .to({rotation: -180}, 200)
+          .wait(8200)
+          .to({alpha: 0, scaleX: 0, scaleY: 0}, 200);
+
+      var txt_you = new createjs.Text("你", "60px Arial", "#FFFFFF");
+      txt_you.scaleX = ratio;
+      txt_you.scaleY = ratio;
+      txt_you.regX = 32;
+      txt_you.regY = -20;
+      txt_you.alpha = 0;
+      txt_you.x = window.innerWidth * 0.15;
+      txt_you.y = window.innerHeight * 0.2;
+      txt_you.textBaseline = "alphabetic";
+      stage.addChild(txt_you);
+      createjs.Tween.get(txt_you)
+          .wait(700)
+          .to({alpha: 1}, 200)
+          .wait(8700)
+          .to({alpha: 0, scaleX: 0, scaleY: 0}, 200);
+
+      var circle_6du_end = new createjs.Bitmap(queue.getResult("end"));
+      circle_6du_end.scaleX = ratio;
+      circle_6du_end.scaleY = ratio;
+      circle_6du_end.alpha = 0;
+      circle_6du_end.regX = 70;
+      circle_6du_end.regY = 70;
+      circle_6du_end.x = window.innerWidth * 0.15;
+      circle_6du_end.y = window.innerHeight * 0.65;
+      stage.addChild(circle_6du_end);
+      createjs.Tween.get(circle_6du_end)
+          .wait(900)
+          .to({alpha: 1}, 200)
+          .wait(8500)
+          .to({alpha: 0, scaleX: 0, scaleY: 0}, 200);
+
+      var dot_line = new createjs.Bitmap(queue.getResult("dot_line"));
+      dot_line.scaleX = ratio;
+      dot_line.scaleY = ratio * 0.7;
+      dot_line.alpha = 0;
+      dot_line.regX = 2;
+      dot_line.regY = 223;
+      dot_line.x = window.innerWidth * 0.15;
+      dot_line.y = window.innerHeight * 0.325;
+      stage.addChild(dot_line);
+      createjs.Tween.get(dot_line)
+          .wait(2000)
+          .to({y: window.innerHeight * 0.425, alpha: 1}, 200)
+          .wait(3900)
+          .to({alpha: 0, scaleX: 0, scaleY: 0}, 200);
+
+      var linking_left = new createjs.Bitmap(queue.getResult("linking_left"));
+      linking_left.scaleX = ratio;
+      linking_left.scaleY = ratio * 1.3;
+      linking_left.alpha = 0;
+      linking_left.regX = 176;
+      linking_left.regY = 345;
+      linking_left.x = window.innerWidth * 0.15;
+      linking_left.y = window.innerHeight * 0.525;
+      stage.addChild(linking_left);
+      createjs.Tween.get(linking_left)
+          .wait(6100)
+          .to({y: window.innerHeight * 0.425, alpha: 1}, 200)
+          .wait(3300)
+          .to({alpha: 0, scaleX: 0, scaleY: 0}, 200);
+
+      var TX_1 = new createjs.Bitmap(queue.getResult("TX_1"));
+      TX_1.scaleX = ratio;
+      TX_1.scaleY = ratio;
+      TX_1.alpha = 0;
+      TX_1.regX = 40;
+      TX_1.regY = 40;
+      TX_1.x = window.innerWidth * 0.15;
+      TX_1.y = window.innerHeight * 0.65;
+      stage.addChild(TX_1);
+      createjs.Tween.get(TX_1)
+          .wait(2350)
+          .to({x: window.innerWidth * 0.27, y: window.innerHeight * 0.45, alpha: 1}, 150)
+          .wait(900)
+          .to({x: window.innerWidth * 0.42, y: window.innerHeight * 0.2}, 250)
+          .wait(1050)
+          .to({x: window.innerWidth * 0.5, y: window.innerHeight * 0.27, alpha: 0, scaleX: 0, scaleY: 0}, 200);
+
+      var TX_1_frame = new createjs.Bitmap(queue.getResult("TX_frame"));
+      TX_1_frame.scaleX = ratio;
+      TX_1_frame.scaleY = ratio;
+      TX_1_frame.alpha = 0;
+      TX_1_frame.rotation = 90;
+      TX_1_frame.regX = 56;
+      TX_1_frame.regY = 56;
+      TX_1_frame.x = window.innerWidth * 0.15;
+      TX_1_frame.y = window.innerHeight * 0.65;
+      stage.addChild(TX_1_frame);
+      createjs.Tween.get(TX_1_frame)
+          .wait(2350)
+          .to({x: window.innerWidth * 0.27, y: window.innerHeight * 0.45, alpha: 1}, 150)
+          .wait(900)
+          .to({x: window.innerWidth * 0.42, y: window.innerHeight * 0.2}, 250)
+          .wait(200)
+          .to({rotation: 180}, 50)
+          .wait(800)
+          .to({x: window.innerWidth * 0.5, y: window.innerHeight * 0.27, alpha: 0, scaleX: 0, scaleY: 0}, 200);
+
+      var TX_2 = new createjs.Bitmap(queue.getResult("TX_2"));
+      TX_2.scaleX = ratio;
+      TX_2.scaleY = ratio;
+      TX_2.alpha = 0;
+      TX_2.regX = 40;
+      TX_2.regY = 40;
+      TX_2.x = window.innerWidth * 0.15;
+      TX_2.y = window.innerHeight * 0.65;
+      stage.addChild(TX_2);
+      createjs.Tween.get(TX_2)
+          .wait(2800)
+          .to({x: window.innerWidth * 0.45, y: window.innerHeight * 0.58, alpha: 1}, 200)
+          .wait(450)
+          .to({x: window.innerWidth * 0.39, y: window.innerHeight * 0.7}, 250)
+          .wait(1050)
+          .to({x: window.innerWidth * 0.5, y: window.innerHeight * 0.58, alpha: 0, scaleX: 0, scaleY: 0}, 200);
+
+      var TX_2_frame = new createjs.Bitmap(queue.getResult("TX_frame"));
+      TX_2_frame.scaleX = ratio;
+      TX_2_frame.scaleY = ratio;
+      TX_2_frame.alpha = 0;
+      TX_2_frame.rotation = 90;
+      TX_2_frame.regX = 56;
+      TX_2_frame.regY = 56;
+      TX_2_frame.x = window.innerWidth * 0.15;
+      TX_2_frame.y = window.innerHeight * 0.65;
+      stage.addChild(TX_2_frame);
+      createjs.Tween.get(TX_2_frame)
+          .wait(2800)
+          .to({x: window.innerWidth * 0.45, y: window.innerHeight * 0.58, alpha: 1}, 200)
+          .wait(450)
+          .to({x: window.innerWidth * 0.39, y: window.innerHeight * 0.7}, 250)
+          .wait(200)
+          .to({rotation: 180}, 50)
+          .wait(800)
+          .to({x: window.innerWidth * 0.5, y: window.innerHeight * 0.58, alpha: 0, scaleX: 0, scaleY: 0}, 200);
+
+      var TX_3 = new createjs.Bitmap(queue.getResult("TX_3"));
+      TX_3.scaleX = ratio;
+      TX_3.scaleY = ratio;
+      TX_3.alpha = 0;
+      TX_3.regX = 40;
+      TX_3.regY = 40;
+      TX_3.x = window.innerWidth * 0.15;
+      TX_3.y = window.innerHeight * 0.65;
+      stage.addChild(TX_3);
+      createjs.Tween.get(TX_3)
+          .wait(2700)
+          .to({x: window.innerWidth * 0.47, y: window.innerHeight * 0.73, alpha: 1}, 200)
+          .wait(550)
+          .to({x: window.innerWidth * 0.61, y: window.innerHeight * 0.7}, 250)
+          .wait(1050)
+          .to({x: window.innerWidth * 0.5, y: window.innerHeight * 0.58, alpha: 0, scaleX: 0, scaleY: 0}, 200);
+
+      var TX_3_frame = new createjs.Bitmap(queue.getResult("TX_frame"));
+      TX_3_frame.scaleX = ratio;
+      TX_3_frame.scaleY = ratio;
+      TX_3_frame.alpha = 0;
+      TX_3_frame.rotation = 90;
+      TX_3_frame.regX = 56;
+      TX_3_frame.regY = 56;
+      TX_3_frame.x = window.innerWidth * 0.15;
+      TX_3_frame.y = window.innerHeight * 0.65;
+      stage.addChild(TX_3_frame);
+      createjs.Tween.get(TX_3_frame)
+          .wait(2700)
+          .to({x: window.innerWidth * 0.47, y: window.innerHeight * 0.73, alpha: 1}, 200)
+          .wait(550)
+          .to({x: window.innerWidth * 0.61, y: window.innerHeight * 0.7}, 250)
+          .wait(200)
+          .to({rotation: 180}, 50)
+          .wait(800)
+          .to({x: window.innerWidth * 0.5, y: window.innerHeight * 0.58, alpha: 0, scaleX: 0, scaleY: 0}, 200);
+
+      var TX_4 = new createjs.Bitmap(queue.getResult("TX_4"));
+      TX_4.scaleX = ratio;
+      TX_4.scaleY = ratio;
+      TX_4.alpha = 0;
+      TX_4.regX = 40;
+      TX_4.regY = 40;
+      TX_4.x = window.innerWidth * 0.15;
+      TX_4.y = window.innerHeight * 0.65;
+      stage.addChild(TX_4);
+      createjs.Tween.get(TX_4)
+          .wait(2600)
+          .to({x: window.innerWidth * 0.38, y: window.innerHeight * 0.3, alpha: 1}, 200)
+          .wait(650)
+          .to({x: window.innerWidth * 0.63, y: window.innerHeight * 0.15}, 250)
+          .wait(1050)
+          .to({x: window.innerWidth * 0.5, y: window.innerHeight * 0.27, alpha: 0, scaleX: 0, scaleY: 0}, 200);
+
+      var TX_4_frame = new createjs.Bitmap(queue.getResult("TX_frame"));
+      TX_4_frame.scaleX = ratio;
+      TX_4_frame.scaleY = ratio;
+      TX_4_frame.alpha = 0;
+      TX_4_frame.rotation = 90;
+      TX_4_frame.regX = 56;
+      TX_4_frame.regY = 56;
+      TX_4_frame.x = window.innerWidth * 0.15;
+      TX_4_frame.y = window.innerHeight * 0.65;
+      stage.addChild(TX_4_frame);
+      createjs.Tween.get(TX_4_frame)
+          .wait(2600)
+          .to({x: window.innerWidth * 0.38, y: window.innerHeight * 0.3, alpha: 1}, 200)
+          .wait(650)
+          .to({x: window.innerWidth * 0.63, y: window.innerHeight * 0.15}, 250)
+          .wait(200)
+          .to({rotation: 180}, 50)
+          .wait(800)
+          .to({x: window.innerWidth * 0.5, y: window.innerHeight * 0.27, alpha: 0, scaleX: 0, scaleY: 0}, 200);
+
+      var TX_5 = new createjs.Bitmap(queue.getResult("TX_5"));
+      TX_5.scaleX = ratio;
+      TX_5.scaleY = ratio;
+      TX_5.alpha = 0;
+      TX_5.regX = 40;
+      TX_5.regY = 40;
+      TX_5.x = window.innerWidth * 0.15;
+      TX_5.y = window.innerHeight * 0.65;
+      stage.addChild(TX_5);
+      createjs.Tween.get(TX_5)
+          .wait(2400)
+          .to({x: window.innerWidth * 0.71, y: window.innerHeight * 0.46, alpha: 1}, 200)
+          .wait(850)
+          .to({x: window.innerWidth * 0.69, y: window.innerHeight * 0.6}, 250)
+          .wait(1050)
+          .to({x: window.innerWidth * 0.85, y: window.innerHeight * 0.51, alpha: 0, scaleX: 0, scaleY: 0}, 200);
+
+      var TX_5_frame = new createjs.Bitmap(queue.getResult("TX_frame"));
+      TX_5_frame.scaleX = ratio;
+      TX_5_frame.scaleY = ratio;
+      TX_5_frame.alpha = 0;
+      TX_5_frame.rotation = 90;
+      TX_5_frame.regX = 56;
+      TX_5_frame.regY = 56;
+      TX_5_frame.x = window.innerWidth * 0.15;
+      TX_5_frame.y = window.innerHeight * 0.65;
+      stage.addChild(TX_5_frame);
+      createjs.Tween.get(TX_5_frame)
+          .wait(2400)
+          .to({x: window.innerWidth * 0.71, y: window.innerHeight * 0.46, alpha: 1}, 200)
+          .wait(850)
+          .to({x: window.innerWidth * 0.69, y: window.innerHeight * 0.6}, 250)
+          .wait(200)
+          .to({rotation: 180}, 50)
+          .wait(800)
+          .to({x: window.innerWidth * 0.85, y: window.innerHeight * 0.51, alpha: 0, scaleX: 0, scaleY: 0}, 200);
+
+      var TX_6 = new createjs.Bitmap(queue.getResult("TX_6"));
+      TX_6.scaleX = ratio;
+      TX_6.scaleY = ratio;
+      TX_6.alpha = 0;
+      TX_6.regX = 40;
+      TX_6.regY = 40;
+      TX_6.x = window.innerWidth * 0.15;
+      TX_6.y = window.innerHeight * 0.65;
+      stage.addChild(TX_6);
+      createjs.Tween.get(TX_6)
+          .wait(2500)
+          .to({x: window.innerWidth * 0.49, y: window.innerHeight * 0.15, alpha: 1}, 200)
+          .wait(750)
+          .to({x: window.innerWidth * 0.65, y: window.innerHeight * 0.27}, 250)
+          .wait(1050)
+          .to({x: window.innerWidth * 0.85, y: window.innerHeight * 0.34, alpha: 0, scaleX: 0, scaleY: 0}, 200);
+
+      var TX_6_frame = new createjs.Bitmap(queue.getResult("TX_frame"));
+      TX_6_frame.scaleX = ratio;
+      TX_6_frame.scaleY = ratio;
+      TX_6_frame.alpha = 0;
+      TX_6_frame.rotation = 90;
+      TX_6_frame.regX = 56;
+      TX_6_frame.regY = 56;
+      TX_6_frame.x = window.innerWidth * 0.15;
+      TX_6_frame.y = window.innerHeight * 0.65;
+      stage.addChild(TX_6_frame);
+      createjs.Tween.get(TX_6_frame)
+          .wait(2500)
+          .to({x: window.innerWidth * 0.49, y: window.innerHeight * 0.15, alpha: 1}, 200)
+          .wait(750)
+          .to({x: window.innerWidth * 0.65, y: window.innerHeight * 0.27}, 250)
+          .wait(200)
+          .to({rotation: 180}, 50)
+          .wait(800)
+          .to({x: window.innerWidth * 0.85, y: window.innerHeight * 0.34, alpha: 0, scaleX: 0, scaleY: 0}, 200);
+
+      var TX_7 = new createjs.Bitmap(queue.getResult("TX_7"));
+      TX_7.scaleX = ratio;
+      TX_7.scaleY = ratio;
+      TX_7.alpha = 0;
+      TX_7.regX = 40;
+      TX_7.regY = 40;
+      TX_7.x = window.innerWidth * 0.15;
+      TX_7.y = window.innerHeight * 0.65;
+      stage.addChild(TX_7);
+      createjs.Tween.get(TX_7)
+          .wait(2800)
+          .to({x: window.innerWidth * 0.77, y: window.innerHeight * 0.72, alpha: 1}, 200)
+          .wait(450)
+          .to({x: window.innerWidth * 0.83, y: window.innerHeight * 0.66}, 250)
+          .wait(1050)
+          .to({x: window.innerWidth * 0.85, y: window.innerHeight * 0.51, alpha: 0, scaleX: 0, scaleY: 0}, 200);
+
+      var TX_7_frame = new createjs.Bitmap(queue.getResult("TX_frame"));
+      TX_7_frame.scaleX = ratio;
+      TX_7_frame.scaleY = ratio;
+      TX_7_frame.alpha = 0;
+      TX_7_frame.rotation = 90;
+      TX_7_frame.regX = 56;
+      TX_7_frame.regY = 56;
+      TX_7_frame.x = window.innerWidth * 0.15;
+      TX_7_frame.y = window.innerHeight * 0.65;
+      stage.addChild(TX_7_frame);
+      createjs.Tween.get(TX_7_frame)
+          .wait(2800)
+          .to({x: window.innerWidth * 0.77, y: window.innerHeight * 0.72, alpha: 1}, 200)
+          .wait(450)
+          .to({x: window.innerWidth * 0.83, y: window.innerHeight * 0.66}, 250)
+          .wait(200)
+          .to({rotation: 180}, 50)
+          .wait(800)
+          .to({x: window.innerWidth * 0.85, y: window.innerHeight * 0.51, alpha: 0, scaleX: 0, scaleY: 0}, 200);
+
+      var TX_8 = new createjs.Bitmap(queue.getResult("TX_8"));
+      TX_8.scaleX = ratio;
+      TX_8.scaleY = ratio;
+      TX_8.alpha = 0;
+      TX_8.regX = 40;
+      TX_8.regY = 40;
+      TX_8.x = window.innerWidth * 0.15;
+      TX_8.y = window.innerHeight * 0.65;
+      stage.addChild(TX_8);
+      createjs.Tween.get(TX_8)
+          .wait(2700)
+          .to({x: window.innerWidth * 0.87, y: window.innerHeight * 0.36, alpha: 1}, 200)
+          .wait(550)
+          .to({x: window.innerWidth * 0.86, y: window.innerHeight * 0.24}, 250)
+          .wait(1050)
+          .to({x: window.innerWidth * 0.85, y: window.innerHeight * 0.34, alpha: 0, scaleX: 0, scaleY: 0}, 200);
+
+      var TX_8_frame = new createjs.Bitmap(queue.getResult("TX_frame"));
+      TX_8_frame.scaleX = ratio;
+      TX_8_frame.scaleY = ratio;
+      TX_8_frame.alpha = 0;
+      TX_8_frame.rotation = 90;
+      TX_8_frame.regX = 56;
+      TX_8_frame.regY = 56;
+      TX_8_frame.x = window.innerWidth * 0.15;
+      TX_8_frame.y = window.innerHeight * 0.65;
+      stage.addChild(TX_8_frame);
+      createjs.Tween.get(TX_8_frame)
+          .wait(2700)
+          .to({x: window.innerWidth * 0.87, y: window.innerHeight * 0.36, alpha: 1}, 200)
+          .wait(550)
+          .to({x: window.innerWidth * 0.86, y: window.innerHeight * 0.24}, 250)
+          .wait(200)
+          .to({rotation: 180}, 50)
+          .wait(800)
+          .to({x: window.innerWidth * 0.85, y: window.innerHeight * 0.34, alpha: 0, scaleX: 0, scaleY: 0}, 200);
+
+
+      var anonymous_1 = new createjs.Bitmap(queue.getResult("anonymous"));
+      anonymous_1.scaleX = ratio;
+      anonymous_1.scaleY = ratio;
+      anonymous_1.alpha = 0;
+      anonymous_1.regX = 52;
+      anonymous_1.regY = 52;
+      anonymous_1.x = window.innerWidth * 0.5;
+      anonymous_1.y = window.innerHeight * 0.27;
+      stage.addChild(anonymous_1);
+      createjs.Tween.get(anonymous_1)
+          .wait(4700)
+          .to({alpha: 1}, 200)
+          .wait(1200)
+          .to({alpha: 0, scaleX: 0, scaleY: 0}, 200);
+
+      var anonymous_2 = new createjs.Bitmap(queue.getResult("anonymous"));
+      anonymous_2.scaleX = ratio;
+      anonymous_2.scaleY = ratio;
+      anonymous_2.alpha = 0;
+      anonymous_2.regX = 52;
+      anonymous_2.regY = 52;
+      anonymous_2.x = window.innerWidth * 0.5;
+      anonymous_2.y = window.innerHeight * 0.58;
+      stage.addChild(anonymous_2);
+      createjs.Tween.get(anonymous_2)
+          .wait(4700)
+          .to({alpha: 1}, 200)
+          .wait(1200)
+          .to({alpha: 0, scaleX: 0, scaleY: 0}, 200);
+
+      var anonymous_3 = new createjs.Bitmap(queue.getResult("anonymous"));
+      anonymous_3.scaleX = ratio;
+      anonymous_3.scaleY = ratio;
+      anonymous_3.alpha = 0;
+      anonymous_3.regX = 52;
+      anonymous_3.regY = 52;
+      anonymous_3.x = window.innerWidth * 0.85;
+      anonymous_3.y = window.innerHeight * 0.34;
+      stage.addChild(anonymous_3);
+      createjs.Tween.get(anonymous_3)
+          .wait(4700)
+          .to({alpha: 1}, 200)
+          .wait(1200)
+          .to({alpha: 0, scaleX: 0, scaleY: 0}, 200);
+
+      var anonymous_4 = new createjs.Bitmap(queue.getResult("anonymous"));
+      anonymous_4.scaleX = ratio;
+      anonymous_4.scaleY = ratio;
+      anonymous_4.alpha = 0;
+      anonymous_4.regX = 52;
+      anonymous_4.regY = 52;
+      anonymous_4.x = window.innerWidth * 0.85;
+      anonymous_4.y = window.innerHeight * 0.51;
+      stage.addChild(anonymous_4);
+      createjs.Tween.get(anonymous_4)
+          .wait(4700)
+          .to({alpha: 1}, 200)
+          .wait(1200)
+          .to({alpha: 0, scaleX: 0, scaleY: 0}, 200);
+
+      var circle_6du_3_1 = new createjs.Bitmap(queue.getResult("circle1"));
+      circle_6du_3_1.scaleX = ratio * 0.42;
+      circle_6du_3_1.scaleY = ratio * 0.42;
+      circle_6du_3_1.alpha = 0;
+      circle_6du_3_1.regX = 234;
+      circle_6du_3_1.regY = 234;
+      circle_6du_3_1.x = window.innerWidth * 0.5;
+      circle_6du_3_1.y = window.innerHeight * 0.27;
+      stage.addChild(circle_6du_3_1);
+      createjs.Tween.get(circle_6du_3_1)
+          .wait(4700)
+          .to({alpha: 1}, 200)
+          .wait(1200)
+          .to({rotation: 75}, 200)
+          .wait(3300)
+          .to({alpha: 0, scaleX: 0, scaleY: 0}, 200);
+
+      var circle_6du_3_2 = new createjs.Bitmap(queue.getResult("circle2"));
+      circle_6du_3_2.scaleX = ratio * 0.42;
+      circle_6du_3_2.scaleY = ratio * 0.42;
+      circle_6du_3_2.alpha = 0;
+      circle_6du_3_2.regX = 234;
+      circle_6du_3_2.regY = 234;
+      circle_6du_3_2.x = window.innerWidth * 0.5;
+      circle_6du_3_2.y = window.innerHeight * 0.27;
+      stage.addChild(circle_6du_3_2);
+      createjs.Tween.get(circle_6du_3_2)
+          .wait(4700)
+          .to({alpha: 1}, 200)
+          .wait(1200)
+          .to({rotation: -90}, 200)
+          .wait(3300)
+          .to({alpha: 0, scaleX: 0, scaleY: 0}, 200);
+
+      var circle_6du_4_1 = new createjs.Bitmap(queue.getResult("circle1"));
+      circle_6du_4_1.scaleX = ratio * 0.42;
+      circle_6du_4_1.scaleY = ratio * 0.42;
+      circle_6du_4_1.alpha = 0;
+      circle_6du_4_1.regX = 234;
+      circle_6du_4_1.regY = 234;
+      circle_6du_4_1.x = window.innerWidth * 0.5;
+      circle_6du_4_1.y = window.innerHeight * 0.58;
+      stage.addChild(circle_6du_4_1);
+      createjs.Tween.get(circle_6du_4_1)
+          .wait(4700)
+          .to({alpha: 1}, 200)
+          .wait(1200)
+          .to({rotation: 75}, 200)
+          .wait(3300)
+          .to({alpha: 0, scaleX: 0, scaleY: 0}, 200);
+
+      var circle_6du_4_2 = new createjs.Bitmap(queue.getResult("circle2"));
+      circle_6du_4_2.scaleX = ratio * 0.42;
+      circle_6du_4_2.scaleY = ratio * 0.42;
+      circle_6du_4_2.alpha = 0;
+      circle_6du_4_2.regX = 234;
+      circle_6du_4_2.regY = 234;
+      circle_6du_4_2.x = window.innerWidth * 0.5;
+      circle_6du_4_2.y = window.innerHeight * 0.58;
+      stage.addChild(circle_6du_4_2);
+      createjs.Tween.get(circle_6du_4_2)
+          .wait(4700)
+          .to({alpha: 1}, 200)
+          .wait(1200)
+          .to({rotation: -90}, 200)
+          .wait(3300)
+          .to({alpha: 0, scaleX: 0, scaleY: 0}, 200);
+
+      var circle_6du_5_1 = new createjs.Bitmap(queue.getResult("circle1"));
+      circle_6du_5_1.scaleX = ratio * 0.42;
+      circle_6du_5_1.scaleY = ratio * 0.42;
+      circle_6du_5_1.alpha = 0;
+      circle_6du_5_1.regX = 234;
+      circle_6du_5_1.regY = 234;
+      circle_6du_5_1.x = window.innerWidth * 0.85;
+      circle_6du_5_1.y = window.innerHeight * 0.34;
+      stage.addChild(circle_6du_5_1);
+      createjs.Tween.get(circle_6du_5_1)
+          .wait(4700)
+          .to({alpha: 1}, 200)
+          .wait(1200)
+          .to({rotation: 75}, 200)
+          .wait(3300)
+          .to({alpha: 0, scaleX: 0, scaleY: 0}, 200);
+
+      var circle_6du_5_2 = new createjs.Bitmap(queue.getResult("circle2"));
+      circle_6du_5_2.scaleX = ratio * 0.42;
+      circle_6du_5_2.scaleY = ratio * 0.42;
+      circle_6du_5_2.alpha = 0;
+      circle_6du_5_2.regX = 234;
+      circle_6du_5_2.regY = 234;
+      circle_6du_5_2.x = window.innerWidth * 0.85;
+      circle_6du_5_2.y = window.innerHeight * 0.34;
+      stage.addChild(circle_6du_5_2);
+      createjs.Tween.get(circle_6du_5_2)
+          .wait(4700)
+          .to({alpha: 1}, 200)
+          .wait(1200)
+          .to({rotation: -90}, 200)
+          .wait(3300)
+          .to({alpha: 0, scaleX: 0, scaleY: 0}, 200);
+
+      var circle_6du_6_1 = new createjs.Bitmap(queue.getResult("circle1"));
+      circle_6du_6_1.scaleX = ratio * 0.42;
+      circle_6du_6_1.scaleY = ratio * 0.42;
+      circle_6du_6_1.alpha = 0;
+      circle_6du_6_1.regX = 234;
+      circle_6du_6_1.regY = 234;
+      circle_6du_6_1.x = window.innerWidth * 0.85;
+      circle_6du_6_1.y = window.innerHeight * 0.51;
+      stage.addChild(circle_6du_6_1);
+      createjs.Tween.get(circle_6du_6_1)
+          .wait(4700)
+          .to({alpha: 1}, 200)
+          .wait(1200)
+          .to({rotation: 75}, 200)
+          .wait(3300)
+          .to({alpha: 0, scaleX: 0, scaleY: 0}, 200);
+
+      var circle_6du_6_2 = new createjs.Bitmap(queue.getResult("circle2"));
+      circle_6du_6_2.scaleX = ratio * 0.42;
+      circle_6du_6_2.scaleY = ratio * 0.42;
+      circle_6du_6_2.alpha = 0;
+      circle_6du_6_2.regX = 234;
+      circle_6du_6_2.regY = 234;
+      circle_6du_6_2.x = window.innerWidth * 0.85;
+      circle_6du_6_2.y = window.innerHeight * 0.51;
+      stage.addChild(circle_6du_6_2);
+      createjs.Tween.get(circle_6du_6_2)
+          .wait(4700)
+          .to({alpha: 1}, 200)
+          .wait(1200)
+          .to({rotation: -90}, 200)
+          .wait(3300)
+          .to({alpha: 0, scaleX: 0, scaleY: 0}, 200);
+
+      var TXL_1 = new createjs.Bitmap(queue.getResult("TXL_1"));
+      TXL_1.scaleX = ratio * 0.73;
+      TXL_1.scaleY = ratio * 0.73;
+      TXL_1.alpha = 0;
+      TXL_1.regX = 71;
+      TXL_1.regY = 71;
+      TXL_1.x = window.innerWidth * 0.85;
+      TXL_1.y = window.innerHeight * 0.34;
+      stage.addChild(TXL_1);
+      createjs.Tween.get(TXL_1)
+          .wait(6100)
+          .to({alpha: 1}, 200)
+          .wait(3300)
+          .to({alpha: 0, scaleX: 0, scaleY: 0}, 200);
+
+      var TXL_2 = new createjs.Bitmap(queue.getResult("TXL_2"));
+      TXL_2.scaleX = ratio * 0.73;
+      TXL_2.scaleY = ratio * 0.73;
+      TXL_2.alpha = 0;
+      TXL_2.regX = 71;
+      TXL_2.regY = 71;
+      TXL_2.x = window.innerWidth * 0.85;
+      TXL_2.y = window.innerHeight * 0.51;
+      stage.addChild(TXL_2);
+      createjs.Tween.get(TXL_2)
+          .wait(6100)
+          .to({alpha: 1}, 200)
+          .wait(3300)
+          .to({alpha: 0, scaleX: 0, scaleY: 0}, 200);
+
+      var TXL_3 = new createjs.Bitmap(queue.getResult("TXL_3"));
+      TXL_3.scaleX = ratio * 0.73;
+      TXL_3.scaleY = ratio * 0.73;
+      TXL_3.alpha = 0;
+      TXL_3.regX = 71;
+      TXL_3.regY = 71;
+      TXL_3.x = window.innerWidth * 0.5;
+      TXL_3.y = window.innerHeight * 0.58;
+      stage.addChild(TXL_3);
+      createjs.Tween.get(TXL_3)
+          .wait(6100)
+          .to({alpha: 1}, 200)
+          .wait(3300)
+          .to({alpha: 0, scaleX: 0, scaleY: 0}, 200);
+
+      var TXL_4 = new createjs.Bitmap(queue.getResult("TXL_4"));
+      TXL_4.scaleX = ratio * 0.73;
+      TXL_4.scaleY = ratio * 0.73;
+      TXL_4.alpha = 0;
+      TXL_4.regX = 71;
+      TXL_4.regY = 71;
+      TXL_4.x = window.innerWidth * 0.5;
+      TXL_4.y = window.innerHeight * 0.27;
+      stage.addChild(TXL_4);
+      createjs.Tween.get(TXL_4)
+          .wait(6100)
+          .to({alpha: 1}, 200)
+          .wait(3300)
+          .to({alpha: 0, scaleX: 0, scaleY: 0}, 200);
+
+      var linking_1 = new createjs.Bitmap(queue.getResult("linking_x"));
+      linking_1.scaleX = ratio1;
+      linking_1.scaleY = ratio2;
+      linking_1.alpha = 0;
+      linking_1.regX = 41;
+      linking_1.regY = 18;
+      linking_1.x = window.innerWidth * 0.325;
+      linking_1.y = window.innerHeight * 0.235;
+      stage.addChild(linking_1);
+      createjs.Tween.get(linking_1)
+          .wait(5100)
+          .to({alpha: 1}, 200)
+          .wait(4300)
+          .to({alpha: 0, scaleX: 0, scaleY: 0}, 200);
+
+      var linking_2 = new createjs.Bitmap(queue.getResult("linking_x"));
+      linking_2.scaleX = ratio1;
+      linking_2.scaleY = ratio2;
+      linking_2.alpha = 0;
+      linking_2.regX = 41;
+      linking_2.regY = 18;
+      linking_2.x = window.innerWidth * 0.675;
+      linking_2.y = window.innerHeight * 0.305;
+      stage.addChild(linking_2);
+      createjs.Tween.get(linking_2)
+          .wait(5300)
+          .to({alpha: 1}, 200)
+          .wait(4100)
+          .to({alpha: 0, scaleX: 0, scaleY: 0}, 200);
+
+      var linking_3 = new createjs.Bitmap(queue.getResult("linking_right"));
+      linking_3.scaleX = ratio1;
+      linking_3.scaleY = ratio2;
+      linking_3.alpha = 0;
+      linking_3.regX = 127;
+      linking_3.regY = 127;
+      linking_3.x = window.innerWidth * 0.85;
+      linking_3.y = window.innerHeight * 0.425;
+      stage.addChild(linking_3);
+      createjs.Tween.get(linking_3)
+          .wait(5500)
+          .to({alpha: 1}, 200)
+          .wait(3900)
+          .to({alpha: 0, scaleX: 0, scaleY: 0}, 200);
+
+      var linking_4 = new createjs.Bitmap(queue.getResult("linking_y"));
+      linking_4.scaleX = ratio1;
+      linking_4.scaleY = ratio2;
+      linking_4.alpha = 0;
+      linking_4.regX = 43;
+      linking_4.regY = 19;
+      linking_4.x = window.innerWidth * 0.675;
+      linking_4.y = window.innerHeight * 0.545;
+      stage.addChild(linking_4);
+      createjs.Tween.get(linking_4)
+          .wait(5700)
+          .to({alpha: 1}, 200)
+          .wait(3700)
+          .to({alpha: 0, scaleX: 0, scaleY: 0}, 200);
+
+      var linking_5 = new createjs.Bitmap(queue.getResult("linking_y"));
+      linking_5.scaleX = ratio1;
+      linking_5.scaleY = ratio2;
+      linking_5.alpha = 0;
+      linking_5.regX = 43;
+      linking_5.regY = 19;
+      linking_5.x = window.innerWidth * 0.325;
+      linking_5.y = window.innerHeight * 0.615;
+      stage.addChild(linking_5);
+      createjs.Tween.get(linking_5)
+          .wait(5900)
+          .to({alpha: 1}, 200)
+          .wait(3500)
+          .to({alpha: 0, scaleX: 0, scaleY: 0}, 200);
+    }
+
+    function animation() {
+
+      b = setTimeout('birthday()',54000);
+
+      var txt_subtitle = new createjs.Text();
+      txt_subtitle.scaleX = ratio;
+      txt_subtitle.scaleY = ratio;
+      txt_subtitle.alpha = 0;
+      txt_subtitle.regX = 185;
+      txt_subtitle.x = window.innerWidth * 0.5;
+      txt_subtitle.y = window.innerHeight * 0.9;
+      txt_subtitle.font = "30px Arial";
+      txt_subtitle.color = "#FFFFFF";
+      txt_subtitle.lineHeight = 50;
+      txt_subtitle.textBaseline = "alphabetic";
+      stage.addChild(txt_subtitle);
+
+      createjs.Tween.get(txt_subtitle)
+          .wait(1300)
+          .to({regX: 180, text: "70亿人、无数种生物形态挤\n在一个浩瀚宇宙的小星球上，"})
+          .to({alpha: 1}, 200)
+          .wait(4000)
+          .to({alpha: 0}, 200)
+          .wait(1500)
+          .to({regX: 195, text: "构成一个复杂又有秩序的世界"})
+          .to({alpha: 1}, 200)
+          .wait(3400)
+          .to({alpha: 0}, 200)
+          .wait(3000)
+          .to({regX: 285, text: "这个矛盾是这个世界脆弱生命中的最大谜团"})
+          .to({alpha: 1}, 200)
+          .wait(3800)
+          .to({alpha: 0}, 200)
+          .wait(1700)
+          .to({regX: 135, text: "这个世界，名叫地球"})
+          .to({alpha: 1}, 200)
+          .wait(3800)
+          .to({alpha: 0}, 200)
+          .wait(1200)
+          .to({regX: 240, text: "在古老的中国有个关于命运线的神话"})
+          .to({alpha: 1}, 200)
+          .wait(4400)
+          .to({alpha: 0}, 100)
+          .wait(1200)
+          .to({regX: 300, text: "据说众神在每个人的脚踝上，系有一根命运线\n并将另一端系在注定与我们命运交汇的人身上"})
+          .to({alpha: 1}, 200)
+          .wait(3600)
+          .to({alpha: 0}, 100)
+          .wait(900)
+          .to({regX: 270, text: "这根命运线永不断裂.如果2个点注定相遇，\n            命运会想尽办法让其实现"})
+          .to({alpha: 1}, 200)
+          .wait(3900)
+          .to({alpha: 0}, 100)
+          .wait(1500)
+          .to({regX: 180, text: "     即使失去所有的希望，\n两者的联系也不会就此断裂"})
+          .to({alpha: 1}, 200)
+          .wait(3600)
+          .to({alpha: 0}, 200)
+          .wait(1400)
+          .to({regX: 285, text: "首先，我们可以通过生日了解自己的时间线"})
+          .to({alpha: 1}, 200)
+          .wait(5700)
+          .to({alpha: 0}, 100);
+
+
+      var circle_animation_1_1 = new createjs.Bitmap(queue.getResult("circle1"));
+      circle_animation_1_1.scaleX = ratio * 5;
+      circle_animation_1_1.scaleY = ratio * 5;
+      circle_animation_1_1.alpha = 0;
+      circle_animation_1_1.regX = 234;
+      circle_animation_1_1.regY = 234;
+      circle_animation_1_1.x = window.innerWidth/2;
+      circle_animation_1_1.y = window.innerHeight * 0.382;
+      stage.addChild(circle_animation_1_1);
+      createjs.Tween.get(circle_animation_1_1)
+          .to({alpha: 1, scaleX: ratio * 0.5, scaleY: ratio * 0.5}, 100)
+          .wait(500)
+          .to({scaleX: ratio, scaleY: ratio}, 100)
+          .wait(600)
+          .to({rotation: -270}, 300)
+          .wait(1100)
+          .to({rotation: -180}, 1300)
+          .wait(500)
+          .to({x: window.innerWidth * 0.15, y: window.innerHeight * 0.1, scaleX: ratio * 0.5, scaleY: ratio * 0.5, rotation: 0}, 100)
+          .wait(1400).to({alpha: 0.3}, 100).wait(4700).to({alpha: 1}, 100)
+          .wait(1100).to({alpha: 0.3}, 100).wait(5500).to({alpha: 1}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(5100).to({alpha: 1}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(5500).to({alpha: 1}, 100)
+          .wait(400).to({alpha: 0.3}, 100).wait(4200).to({alpha: 1}, 100)
+          .wait(500).to({alpha: 0.3}, 100).wait(4400).to({alpha: 1}, 100)
+          .wait(700).to({alpha: 0.3}, 100).wait(4900).to({alpha: 1}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(4300).to({alpha: 1}, 100);
+
+      var circle_animation_1_2 = new createjs.Bitmap(queue.getResult("circle2"));
+      circle_animation_1_2.scaleX = ratio * 5;
+      circle_animation_1_2.scaleY = ratio * 5;
+      circle_animation_1_2.alpha = 0;
+      circle_animation_1_2.regX = 234;
+      circle_animation_1_2.regY = 234;
+      circle_animation_1_2.x = window.innerWidth/2;
+      circle_animation_1_2.y = window.innerHeight * 0.382;
+      stage.addChild(circle_animation_1_2);
+      createjs.Tween.get(circle_animation_1_2)
+          .to({alpha: 1, scaleX: ratio * 0.5, scaleY: ratio * 0.5}, 100)
+          .wait(500)
+          .to({scaleX: ratio, scaleY: ratio}, 100)
+          .wait(600)
+          .to({rotation: 270}, 300)
+          .wait(1100)
+          .to({rotation: 180}, 1300)
+          .wait(500)
+          .to({x: window.innerWidth * 0.15, y: window.innerHeight * 0.1, scaleX: ratio * 0.5, scaleY: ratio * 0.5, rotation: 0}, 100)
+          .wait(1400).to({alpha: 0.3}, 100).wait(4700).to({alpha: 1}, 100)
+          .wait(1100).to({alpha: 0.3}, 100).wait(5500).to({alpha: 1}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(5100).to({alpha: 1}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(5500).to({alpha: 1}, 100)
+          .wait(400).to({alpha: 0.3}, 100).wait(4200).to({alpha: 1}, 100)
+          .wait(500).to({alpha: 0.3}, 100).wait(4400).to({alpha: 1}, 100)
+          .wait(700).to({alpha: 0.3}, 100).wait(4900).to({alpha: 1}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(4300).to({alpha: 1}, 100);
+
+      var sun = new createjs.Bitmap(queue.getResult("sun"));
+      sun.scaleX = ratio * 0.7;
+      sun.scaleY = ratio * 0.7;
+      sun.alpha = 0;
+      sun.regX = 152;
+      sun.regY = 152;
+      sun.x = window.innerWidth * 0.5;
+      sun.y = window.innerHeight * 0.382;
+      stage.addChild(sun);
+      createjs.Tween.get(sun)
+          .wait(2700)
+          .to({alpha: 1}, 300)
+          .wait(1500)
+          .to({x: window.innerWidth * 0.15, y: window.innerHeight * 0.1, scaleX: ratio * 0.35, scaleY: ratio * 0.35}, 100)
+          .wait(1400).to({alpha: 0.3}, 100).wait(4700).to({alpha: 1}, 100)
+          .wait(1100).to({alpha: 0.3}, 100).wait(5500).to({alpha: 1}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(5100).to({alpha: 1}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(5500).to({alpha: 1}, 100)
+          .wait(400).to({alpha: 0.3}, 100).wait(4200).to({alpha: 1}, 100)
+          .wait(500).to({alpha: 0.3}, 100).wait(4400).to({alpha: 1}, 100)
+          .wait(700).to({alpha: 0.3}, 100).wait(4900).to({alpha: 1}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(4300).to({alpha: 1}, 100);
+
+      var earth = new createjs.Bitmap(queue.getResult("earth"));
+      earth.scaleX = ratio * 0.7;
+      earth.scaleY = ratio * 0.7;
+      earth.alpha = 0;
+      earth.regX = 152;
+      earth.regY = 152;
+      earth.x = window.innerWidth * 0.5;
+      earth.y = window.innerHeight * 0.387;
+      stage.addChild(earth);
+      createjs.Tween.get(earth)
+          .wait(1300)
+          .to({scaleX: ratio * 1.3, scaleY: ratio * 1.3, alpha: 1}, 200)
+          .wait(1200)
+          .to({x: window.innerWidth * 0.63, y: window.innerHeight * 0.382, scaleX: ratio * 0.3, scaleY: ratio * 0.3}, 300)
+          .wait(100)
+          .to({guide:{ path:[
+              window.innerWidth * 0.63,window.innerHeight * 0.382,
+              window.innerWidth * 0.675,window.innerHeight * 0.32,
+              window.innerWidth * 0.55,window.innerHeight * 0.325,
+              window.innerWidth * 0.37, window.innerHeight * 0.345,
+              window.innerWidth * 0.36, window.innerHeight * 0.394
+          ] }},1000)
+          .wait(400)
+          .to({x: window.innerWidth * 0.22, y: window.innerHeight * 0.1, scaleX: ratio * 0.1, scaleY: ratio * 0.1}, 100)
+          .wait(1400).to({alpha: 0.3}, 100).wait(4700).to({alpha: 1}, 100)
+          .wait(1100).to({alpha: 0.3}, 100).wait(5500).to({alpha: 1}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(5100).to({alpha: 1}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(5500).to({alpha: 1}, 100)
+          .wait(400).to({alpha: 0.3}, 100).wait(4200).to({alpha: 1}, 100)
+          .wait(500).to({alpha: 0.3}, 100).wait(4400).to({alpha: 1}, 100)
+          .wait(700).to({alpha: 0.3}, 100).wait(4900).to({alpha: 1}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(4300).to({alpha: 1}, 100);
+
+      var linking_animation_1 = new createjs.Bitmap(queue.getResult("linking_x"));
+      linking_animation_1.scaleX = ratio;
+      linking_animation_1.scaleY = ratio;
+      linking_animation_1.alpha = 0;
+      linking_animation_1.regX = 41;
+      linking_animation_1.regY = 18;
+      linking_animation_1.x = window.innerWidth * 0.15;
+      linking_animation_1.y = window.innerHeight * 0.1;
+      stage.addChild(linking_animation_1);
+      createjs.Tween.get(linking_animation_1)
+          .wait(5300)
+          .to({x: window.innerWidth * 0.325, y: window.innerHeight * 0.14, alpha: 1}, 100)
+          .wait(600).to({alpha: 0.3}, 100).wait(4700).to({alpha: 1}, 100)
+          .wait(1100).to({alpha: 0.3}, 100).wait(5500).to({alpha: 1}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(5100).to({alpha: 1}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(5500).to({alpha: 1}, 100)
+          .wait(400).to({alpha: 0.3}, 100).wait(4200).to({alpha: 1}, 100)
+          .wait(500).to({alpha: 0.3}, 100).wait(4400).to({alpha: 1}, 100)
+          .wait(700).to({alpha: 0.3}, 100).wait(4900).to({alpha: 1}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(4300).to({alpha: 1}, 100);
+
+      var circle_animation_2_1 = new createjs.Bitmap(queue.getResult("circle1"));
+      circle_animation_2_1.scaleX = ratio * 5;
+      circle_animation_2_1.scaleY = ratio * 5;
+      circle_animation_2_1.alpha = 0;
+      circle_animation_2_1.regX = 234;
+      circle_animation_2_1.regY = 234;
+      circle_animation_2_1.x = window.innerWidth/2;
+      circle_animation_2_1.y = window.innerHeight * 0.382;
+      stage.addChild(circle_animation_2_1);
+      createjs.Tween.get(circle_animation_2_1)
+          .wait(6000)
+          .to({alpha: 1, scaleX: ratio * 0.5, scaleY: ratio * 0.5}, 100)
+          .wait(500)
+          .to({scaleX: ratio, scaleY: ratio}, 100)
+          .wait(600)
+          .to({rotation: -270}, 300)
+          .wait(2500)
+          .to({x: window.innerWidth * 0.5, y: window.innerHeight * 0.18, scaleX: ratio * 0.5, scaleY: ratio * 0.5, rotation: 0}, 100)
+          .wait(1800).to({alpha: 0.3}, 100).wait(5500).to({alpha: 1}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(5100).to({alpha: 1}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(5500).to({alpha: 1}, 100)
+          .wait(400).to({alpha: 0.3}, 100).wait(4200).to({alpha: 1}, 100)
+          .wait(500).to({alpha: 0.3}, 100).wait(4400).to({alpha: 1}, 100)
+          .wait(700).to({alpha: 0.3}, 100).wait(4900).to({alpha: 1}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(4300).to({alpha: 1}, 100);
+
+      var circle_animation_2_2 = new createjs.Bitmap(queue.getResult("circle2"));
+      circle_animation_2_2.scaleX = ratio * 5;
+      circle_animation_2_2.scaleY = ratio * 5;
+      circle_animation_2_2.alpha = 0;
+      circle_animation_2_2.regX = 234;
+      circle_animation_2_2.regY = 234;
+      circle_animation_2_2.x = window.innerWidth/2;
+      circle_animation_2_2.y = window.innerHeight * 0.382;
+      stage.addChild(circle_animation_2_2);
+      createjs.Tween.get(circle_animation_2_2)
+          .wait(6000)
+          .to({alpha: 1, scaleX: ratio * 0.5, scaleY: ratio * 0.5}, 100)
+          .wait(500)
+          .to({scaleX: ratio, scaleY: ratio}, 100)
+          .wait(600)
+          .to({rotation: 270}, 300)
+          .wait(700)
+          .to({rotation: 180}, 300)
+          .wait(1500)
+          .to({x: window.innerWidth * 0.5, y: window.innerHeight * 0.18, scaleX: ratio * 0.5, scaleY: ratio * 0.5, rotation: 0}, 100)
+          .wait(1800).to({alpha: 0.3}, 100).wait(5500).to({alpha: 1}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(5100).to({alpha: 1}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(5500).to({alpha: 1}, 100)
+          .wait(400).to({alpha: 0.3}, 100).wait(4200).to({alpha: 1}, 100)
+          .wait(500).to({alpha: 0.3}, 100).wait(4400).to({alpha: 1}, 100)
+          .wait(700).to({alpha: 0.3}, 100).wait(4900).to({alpha: 1}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(4300).to({alpha: 1}, 100);
+
+      var order = new createjs.Bitmap(queue.getResult("order"));
+      order.scaleX = ratio * 0.5;
+      order.scaleY = ratio * 0.5;
+      order.alpha = 0;
+      order.regX = 200;
+      order.regY = 200;
+      order.x = window.innerWidth/2;
+      order.y = window.innerHeight * 0.382;
+      stage.addChild(order);
+      createjs.Tween.get(order)
+          .wait(7300)
+          .to({alpha: 1, scaleX: ratio, scaleY: ratio}, 200)
+          .wait(800)
+          .to({scaleX: ratio * 0.7, scaleY: ratio * 0.7}, 300)
+          .wait(1500)
+          .to({x: window.innerWidth * 0.5, y: window.innerHeight * 0.18, scaleX: ratio * 0.4, scaleY: ratio * 0.4}, 100)
+          .wait(1800).to({alpha: 0.3}, 100).wait(5500).to({alpha: 1}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(5100).to({alpha: 1}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(5500).to({alpha: 1}, 100)
+          .wait(400).to({alpha: 0.3}, 100).wait(4200).to({alpha: 1}, 100)
+          .wait(500).to({alpha: 0.3}, 100).wait(4400).to({alpha: 1}, 100)
+          .wait(700).to({alpha: 0.3}, 100).wait(4900).to({alpha: 1}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(4300).to({alpha: 1}, 100);
+
+      var linking_animation_2 = new createjs.Bitmap(queue.getResult("linking_x"));
+      linking_animation_2.scaleX = ratio;
+      linking_animation_2.scaleY = ratio;
+      linking_animation_2.alpha = 0;
+      linking_animation_2.regX = 41;
+      linking_animation_2.regY = 18;
+      linking_animation_2.x = window.innerWidth * 0.5;
+      linking_animation_2.y = window.innerHeight * 0.18;
+      stage.addChild(linking_animation_2);
+      createjs.Tween.get(linking_animation_2)
+          .wait(10600)
+          .to({x: window.innerWidth * 0.675, y: window.innerHeight * 0.22, alpha: 1}, 100)
+          .wait(1300).to({alpha: 0.3}, 100).wait(5500).to({alpha: 1}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(5100).to({alpha: 1}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(5500).to({alpha: 1}, 100)
+          .wait(400).to({alpha: 0.3}, 100).wait(4200).to({alpha: 1}, 100)
+          .wait(500).to({alpha: 0.3}, 100).wait(4400).to({alpha: 1}, 100)
+          .wait(700).to({alpha: 0.3}, 100).wait(4900).to({alpha: 1}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(4300).to({alpha: 1}, 100);
+
+      var circle_animation_3_1 = new createjs.Bitmap(queue.getResult("circle1"));
+      circle_animation_3_1.scaleX = ratio * 5;
+      circle_animation_3_1.scaleY = ratio * 5;
+      circle_animation_3_1.alpha = 0;
+      circle_animation_3_1.regX = 234;
+      circle_animation_3_1.regY = 234;
+      circle_animation_3_1.x = window.innerWidth * 0.85;
+      circle_animation_3_1.y = window.innerHeight * 0.26;
+      stage.addChild(circle_animation_3_1);
+      createjs.Tween.get(circle_animation_3_1)
+          .wait(11400)
+          .to({alpha: 1, scaleX: ratio * 0.5, scaleY: ratio * 0.5}, 200)
+          .wait(400)
+          .to({x: window.innerWidth * 0.3, y: window.innerHeight * 0.5}, 250)
+          .wait(250)
+          .to({scaleX: ratio * 0.4, scaleY: ratio * 0.6, rotation: 40}, 100)
+          .wait(1100)
+          .to({scaleX: ratio * 0.5, scaleY: ratio * 0.5, rotation: 0}, 100)
+          .wait(200)
+          .to({scaleX: ratio, scaleY: ratio, x: window.innerWidth * 0.5, y: window.innerHeight * 0.382}, 100)
+          .wait(200)
+          .to({rotation: -45}, 150)
+          .wait(3150)
+          .to({scaleX: ratio * 0.5, scaleY: ratio * 0.5, x: window.innerWidth * 0.85, y: window.innerHeight * 0.26, rotation: 0}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(5100).to({alpha: 1}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(5500).to({alpha: 1}, 100)
+          .wait(400).to({alpha: 0.3}, 100).wait(4200).to({alpha: 1}, 100)
+          .wait(500).to({alpha: 0.3}, 100).wait(4400).to({alpha: 1}, 100)
+          .wait(700).to({alpha: 0.3}, 100).wait(4900).to({alpha: 1}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(4300).to({alpha: 1}, 100);
+
+      var circle_animation_3_2 = new createjs.Bitmap(queue.getResult("circle2"));
+      circle_animation_3_2.scaleX = ratio * 5;
+      circle_animation_3_2.scaleY = ratio * 5;
+      circle_animation_3_2.alpha = 0;
+      circle_animation_3_2.regX = 234;
+      circle_animation_3_2.regY = 234;
+      circle_animation_3_2.x = window.innerWidth * 0.85;
+      circle_animation_3_2.y = window.innerHeight * 0.26;
+      stage.addChild(circle_animation_3_2);
+      createjs.Tween.get(circle_animation_3_2)
+          .wait(11400)
+          .to({alpha: 1, scaleX: ratio * 0.5, scaleY: ratio * 0.5}, 200)
+          .wait(400)
+          .to({x: window.innerWidth * 0.3, y: window.innerHeight * 0.5}, 250)
+          .wait(250)
+          .to({scaleX: ratio * 0.4, scaleY: ratio * 0.6, rotation: 40}, 100)
+          .wait(400)
+          .to({x: window.innerWidth * 0.4}, 50)
+          .wait(400)
+          .to({x: window.innerWidth * 0.3}, 50)
+          .wait(200)
+          .to({scaleX: ratio * 0.5, scaleY: ratio * 0.5, rotation: 0}, 100)
+          .wait(200)
+          .to({scaleX: ratio, scaleY: ratio, x: window.innerWidth * 0.5, y: window.innerHeight * 0.382}, 100)
+          .wait(200)
+          .to({rotation: 90}, 300)
+          .wait(300)
+          .to({rotation: 180}, 2500)
+          .wait(200)
+          .to({scaleX: ratio * 0.5, scaleY: ratio * 0.5, x: window.innerWidth * 0.85, y: window.innerHeight * 0.26, rotation: 0}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(5100).to({alpha: 1}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(5500).to({alpha: 1}, 100)
+          .wait(400).to({alpha: 0.3}, 100).wait(4200).to({alpha: 1}, 100)
+          .wait(500).to({alpha: 0.3}, 100).wait(4400).to({alpha: 1}, 100)
+          .wait(700).to({alpha: 0.3}, 100).wait(4900).to({alpha: 1}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(4300).to({alpha: 1}, 100);
+
+      var question = new createjs.Bitmap(queue.getResult("question"));
+      question.scaleX = ratio * 0.7;
+      question.scaleY = ratio * 0.7;
+      question.alpha = 0;
+      question.regX = 310;
+      question.regY = 300;
+      question.x = window.innerWidth * 0.5;
+      question.y = window.innerHeight * 0.382;
+      stage.addChild(question);
+      createjs.Tween.get(question)
+          .wait(14000)
+          .to({alpha: 1}, 200)
+          .wait(800)
+          .to({rotation: 45}, 300)
+          .to({rotation: -45}, 300)
+          .to({rotation: 45}, 300)
+          .to({rotation: -45}, 300)
+          .to({rotation: 0}, 300)
+          .wait(1100)
+          .to({scaleX: ratio * 0.3, scaleY: ratio * 0.3, x: window.innerWidth * 0.85, y: window.innerHeight * 0.26, rotation: 0}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(5100).to({alpha: 1}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(5500).to({alpha: 1}, 100)
+          .wait(400).to({alpha: 0.3}, 100).wait(4200).to({alpha: 1}, 100)
+          .wait(500).to({alpha: 0.3}, 100).wait(4400).to({alpha: 1}, 100)
+          .wait(700).to({alpha: 0.3}, 100).wait(4900).to({alpha: 1}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(4300).to({alpha: 1}, 100);
+
+      var linking_animation_3 = new createjs.Bitmap(queue.getResult("linking_right"));
+      linking_animation_3.scaleX = ratio * 1.2;
+      linking_animation_3.scaleY = ratio * 1.2;
+      linking_animation_3.alpha = 0;
+      linking_animation_3.regX = 127;
+      linking_animation_3.regY = 117;
+      linking_animation_3.x = window.innerWidth * 0.85;
+      linking_animation_3.y = window.innerHeight * 0.26;
+      stage.addChild(linking_animation_3);
+      createjs.Tween.get(linking_animation_3)
+          .wait(17800)
+          .to({y: window.innerHeight * 0.37, alpha: 1}, 100)
+          .wait(600).to({alpha: 0.3}, 100).wait(5100).to({alpha: 1}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(5500).to({alpha: 1}, 100)
+          .wait(400).to({alpha: 0.3}, 100).wait(4200).to({alpha: 1}, 100)
+          .wait(500).to({alpha: 0.3}, 100).wait(4400).to({alpha: 1}, 100)
+          .wait(700).to({alpha: 0.3}, 100).wait(4900).to({alpha: 1}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(4300).to({alpha: 1}, 100);
+
+      var circle_animation_4_1 = new createjs.Bitmap(queue.getResult("circle1"));
+      circle_animation_4_1.scaleX = ratio * 0.5;
+      circle_animation_4_1.scaleY = ratio * 0.5;
+      circle_animation_4_1.alpha = 0;
+      circle_animation_4_1.regX = 234;
+      circle_animation_4_1.regY = 234;
+      circle_animation_4_1.x = window.innerWidth * 0.85;
+      circle_animation_4_1.y = window.innerHeight * 0.48;
+      stage.addChild(circle_animation_4_1);
+      createjs.Tween.get(circle_animation_4_1)
+          .wait(18000)
+          .to({alpha: 1}, 400)
+          .wait(100)
+          .to({scaleX: 0, scaleY: 0, x: window.innerWidth * 0.5, y: window.innerHeight * 0.382},50)
+          .wait(100)
+          .to({scaleX: ratio * 10, scaleY: ratio * 10}, 150)
+          .to({scaleX: ratio, scaleY: ratio}, 200)
+          .wait(600)
+          .to({rotation: -90}, 600)
+          .wait(600)
+          .to({rotation: -185}, 2600)
+          .wait(300)
+          .to({scaleX: ratio * 0.5, scaleY: ratio * 0.5, x: window.innerWidth * 0.85, y: window.innerHeight * 0.48, rotation: 0}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(5500).to({alpha: 1}, 100)
+          .wait(400).to({alpha: 0.3}, 100).wait(4200).to({alpha: 1}, 100)
+          .wait(500).to({alpha: 0.3}, 100).wait(4400).to({alpha: 1}, 100)
+          .wait(700).to({alpha: 0.3}, 100).wait(4900).to({alpha: 1}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(4300).to({alpha: 1}, 100);
+
+      var circle_animation_4_2 = new createjs.Bitmap(queue.getResult("circle2"));
+      circle_animation_4_2.scaleX = ratio * 0.5;
+      circle_animation_4_2.scaleY = ratio * 0.5;
+      circle_animation_4_2.alpha = 0;
+      circle_animation_4_2.regX = 234;
+      circle_animation_4_2.regY = 234;
+      circle_animation_4_2.x = window.innerWidth * 0.85;
+      circle_animation_4_2.y = window.innerHeight * 0.48;
+      stage.addChild(circle_animation_4_2);
+      createjs.Tween.get(circle_animation_4_2)
+          .wait(18000)
+          .to({alpha: 1}, 400)
+          .wait(100)
+          .to({scaleX: 0, scaleY: 0, x: window.innerWidth * 0.5, y: window.innerHeight * 0.382},50)
+          .wait(100)
+          .to({scaleX: ratio * 10, scaleY: ratio * 10}, 150)
+          .to({scaleX: ratio, scaleY: ratio}, 200)
+          .wait(600)
+          .to({rotation: 90}, 600)
+          .wait(600)
+          .to({rotation: 185}, 2600)
+          .wait(300)
+          .to({scaleX: ratio * 0.5, scaleY: ratio * 0.5, x: window.innerWidth * 0.85, y: window.innerHeight * 0.48, rotation: 0}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(5500).to({alpha: 1}, 100)
+          .wait(400).to({alpha: 0.3}, 100).wait(4200).to({alpha: 1}, 100)
+          .wait(500).to({alpha: 0.3}, 100).wait(4400).to({alpha: 1}, 100)
+          .wait(700).to({alpha: 0.3}, 100).wait(4900).to({alpha: 1}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(4300).to({alpha: 1}, 100);
+
+
+
+      var earth2 = new createjs.Bitmap(queue.getResult("earth2"));
+      earth2.scaleX = 0;
+      earth2.scaleY = 0;
+      earth2.alpha = 0;
+      earth2.regX = 202;
+      earth2.regY = 202;
+      earth2.x = window.innerWidth * 0.5;
+      earth2.y = window.innerHeight * 0.382;
+      stage.addChild(earth2);
+      createjs.Tween.get(earth2)
+          .wait(19800)
+          .to({alpha: 1, scaleX: ratio * 0.8, scaleY: ratio * 0.8}, 400)
+          .wait(800)
+          .to({rotation: 360}, 2000)
+          .wait(700)
+          .to({x: window.innerWidth * 0.85, y: window.innerHeight * 0.48, scaleX: ratio * 0.4, scaleY: ratio * 0.4}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(5500).to({alpha: 1}, 100)
+          .wait(400).to({alpha: 0.3}, 100).wait(4200).to({alpha: 1}, 100)
+          .wait(500).to({alpha: 0.3}, 100).wait(4400).to({alpha: 1}, 100)
+          .wait(700).to({alpha: 0.3}, 100).wait(4900).to({alpha: 1}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(4300).to({alpha: 1}, 100);
+
+      var linking_animation_4 = new createjs.Bitmap(queue.getResult("linking_x"));
+      linking_animation_4.scaleX = ratio;
+      linking_animation_4.scaleY = ratio;
+      linking_animation_4.alpha = 0;
+      linking_animation_4.regX = 41;
+      linking_animation_4.regY = 18;
+      linking_animation_4.x = window.innerWidth * 0.85;
+      linking_animation_4.y = window.innerHeight * 0.48;
+      stage.addChild(linking_animation_4);
+      createjs.Tween.get(linking_animation_4)
+          .wait(24100)
+          .to({x: window.innerWidth * 0.675, y: window.innerHeight * 0.44, alpha: 1}, 100)
+          .wait(400).to({alpha: 0.3}, 100).wait(5500).to({alpha: 1}, 100)
+          .wait(400).to({alpha: 0.3}, 100).wait(4200).to({alpha: 1}, 100)
+          .wait(500).to({alpha: 0.3}, 100).wait(4400).to({alpha: 1}, 100)
+          .wait(700).to({alpha: 0.3}, 100).wait(4900).to({alpha: 1}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(4300).to({alpha: 1}, 100);
+
+      var circle_animation_5_1 = new createjs.Bitmap(queue.getResult("circle1"));
+      circle_animation_5_1.scaleX = ratio * 5;
+      circle_animation_5_1.scaleY = ratio * 5;
+      circle_animation_5_1.alpha = 0;
+      circle_animation_5_1.regX = 234;
+      circle_animation_5_1.regY = 234;
+      circle_animation_5_1.x = window.innerWidth * 0.5;
+      circle_animation_5_1.y = window.innerHeight * 0.4;
+      stage.addChild(circle_animation_5_1);
+      createjs.Tween.get(circle_animation_5_1)
+          .wait(24400)
+          .to({scaleX: ratio * 0.5, scaleY: ratio * 0.5, alpha:1},250)
+          .wait(400)
+          .to({scaleX: ratio, scaleY: ratio}, 250)
+          .wait(200)
+          .to({rotation: 180}, 100)
+          .wait(200)
+          .to({rotation: 0}, 3000)
+          .wait(800)
+          .to({scaleX: ratio * 0.5, scaleY: ratio * 0.5, rotation: 0},200)
+          .wait(900).to({alpha: 0.3}, 100).wait(4200).to({alpha: 1}, 100)
+          .wait(500).to({alpha: 0.3}, 100).wait(4400).to({alpha: 1}, 100)
+          .wait(700).to({alpha: 0.3}, 100).wait(4900).to({alpha: 1}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(4300).to({alpha: 1}, 100);
+
+      var circle_animation_5_2 = new createjs.Bitmap(queue.getResult("circle2"));
+      circle_animation_5_2.scaleX = ratio * 5;
+      circle_animation_5_2.scaleY = ratio * 5;
+      circle_animation_5_2.alpha = 0;
+      circle_animation_5_2.regX = 234;
+      circle_animation_5_2.regY = 234;
+      circle_animation_5_2.x = window.innerWidth * 0.5;
+      circle_animation_5_2.y = window.innerHeight * 0.4;
+      stage.addChild(circle_animation_5_2);
+      createjs.Tween.get(circle_animation_5_2)
+          .wait(24400)
+          .to({scaleX: ratio * 0.5, scaleY: ratio * 0.5, alpha:1},250)
+          .wait(400)
+          .to({scaleX: ratio, scaleY: ratio}, 250)
+          .wait(200)
+          .to({rotation: -180}, 100)
+          .wait(200)
+          .to({rotation: 0}, 3000)
+          .wait(800)
+          .to({scaleX: ratio * 0.5, scaleY: ratio * 0.5, rotation: 0},200)
+          .wait(900).to({alpha: 0.3}, 100).wait(4200).to({alpha: 1}, 100)
+          .wait(500).to({alpha: 0.3}, 100).wait(4400).to({alpha: 1}, 100)
+          .wait(700).to({alpha: 0.3}, 100).wait(4900).to({alpha: 1}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(4300).to({alpha: 1}, 100);
+
+      var china = new createjs.Bitmap(queue.getResult("china"));
+      china.scaleX = 0;
+      china.scaleY = 0;
+      china.alpha = 0;
+      china.regX = 280;
+      china.regY = 270;
+      china.x = window.innerWidth * 0.5;
+      china.y = window.innerHeight * 0.4;
+      stage.addChild(china);
+      createjs.Tween.get(china)
+          .wait(25300)
+          .to({alpha: 1, scaleX: ratio * 0.8, scaleY: ratio * 0.8}, 400)
+          .wait(3900)
+          .to({scaleX: ratio * 0.4, scaleY: ratio * 0.4},200)
+          .wait(900).to({alpha: 0.3}, 100).wait(4200).to({alpha: 1}, 100)
+          .wait(500).to({alpha: 0.3}, 100).wait(4400).to({alpha: 1}, 100)
+          .wait(700).to({alpha: 0.3}, 100).wait(4900).to({alpha: 1}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(4300).to({alpha: 1}, 100);
+
+      var linking_animation_5 = new createjs.Bitmap(queue.getResult("linking_x"));
+      linking_animation_5.scaleX = ratio;
+      linking_animation_5.scaleY = ratio;
+      linking_animation_5.alpha = 0;
+      linking_animation_5.regX = 41;
+      linking_animation_5.regY = 18;
+      linking_animation_5.x = window.innerWidth * 0.5;
+      linking_animation_5.y = window.innerHeight * 0.4;
+      stage.addChild(linking_animation_5);
+      createjs.Tween.get(linking_animation_5)
+          .wait(29900)
+          .to({x: window.innerWidth * 0.325, y: window.innerHeight * 0.36, alpha: 1}, 100)
+          .wait(700).to({alpha: 0.3}, 100).wait(4200).to({alpha: 1}, 100)
+          .wait(500).to({alpha: 0.3}, 100).wait(4400).to({alpha: 1}, 100)
+          .wait(700).to({alpha: 0.3}, 100).wait(4900).to({alpha: 1}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(4300).to({alpha: 1}, 100);
+
+      var circle_animation_6_1 = new createjs.Bitmap(queue.getResult("circle1"));
+      circle_animation_6_1.scaleX = ratio * 5;
+      circle_animation_6_1.scaleY = ratio * 5;
+      circle_animation_6_1.alpha = 0;
+      circle_animation_6_1.regX = 234;
+      circle_animation_6_1.regY = 234;
+      circle_animation_6_1.x = window.innerWidth * 0.15;
+      circle_animation_6_1.y = window.innerHeight * 0.32;
+      stage.addChild(circle_animation_6_1);
+      createjs.Tween.get(circle_animation_6_1)
+          .wait(30200)
+          .to({scaleX: ratio * 0.5, scaleY: ratio * 0.5, alpha:1},200)
+          .wait(300)
+          .to({scaleX: ratio, scaleY: ratio, x:window.innerWidth * 0.5, y: window.innerHeight * 0.382}, 300)
+          .wait(100)
+          .to({rotation: -45}, 300)
+          .wait(100)
+          .to({rotation: 45}, 3300)
+          .wait(200)
+          .to({scaleX: ratio * 0.5, scaleY: ratio * 0.5, x: window.innerWidth * 0.15, y: window.innerHeight * 0.32, rotation: 0},100)
+          .wait(500).to({alpha: 0.3}, 100).wait(4400).to({alpha: 1}, 100)
+          .wait(700).to({alpha: 0.3}, 100).wait(4900).to({alpha: 1}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(4300).to({alpha: 1}, 100);
+
+      var circle_animation_6_2 = new createjs.Bitmap(queue.getResult("circle2"));
+      circle_animation_6_2.scaleX = ratio * 5;
+      circle_animation_6_2.scaleY = ratio * 5;
+      circle_animation_6_2.alpha = 0;
+      circle_animation_6_2.regX = 234;
+      circle_animation_6_2.regY = 234;
+      circle_animation_6_2.x = window.innerWidth * 0.15;
+      circle_animation_6_2.y = window.innerHeight * 0.32;
+      stage.addChild(circle_animation_6_2);
+      createjs.Tween.get(circle_animation_6_2)
+          .wait(30200)
+          .to({scaleX: ratio * 0.5, scaleY: ratio * 0.5, alpha:1},200)
+          .wait(300)
+          .to({scaleX: ratio, scaleY: ratio, x: window.innerWidth * 0.5, y: window.innerHeight * 0.382}, 300)
+          .wait(100)
+          .to({rotation: 45}, 300)
+          .wait(100)
+          .to({rotation: -45}, 3300)
+          .wait(200)
+          .to({scaleX: ratio * 0.5, scaleY: ratio * 0.5, x: window.innerWidth * 0.15, y: window.innerHeight * 0.32, rotation: 0},100)
+          .wait(500).to({alpha: 0.3}, 100).wait(4400).to({alpha: 1}, 100)
+          .wait(700).to({alpha: 0.3}, 100).wait(4900).to({alpha: 1}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(4300).to({alpha: 1}, 100);
+
+      var line = new createjs.Bitmap(queue.getResult("line"));
+      line.scaleX = 0;
+      line.scaleY = 0;
+      line.alpha = 0;
+      line.regX = 254;
+      line.regY = 254;
+      line.x = window.innerWidth * 0.5;
+      line.y = window.innerHeight * 0.382;
+      stage.addChild(line);
+      createjs.Tween.get(line)
+          .wait(31100)
+          .to({alpha: 1, scaleX: ratio * 0.8, scaleY: ratio * 0.8}, 300)
+          .wait(400)
+          .to({scaleX: ratio * 0.4},1000)
+          .to({scaleX: ratio * 0.8},1000)
+          .wait(1200)
+          .to({scaleX: ratio * 0.4, scaleY: ratio * 0.4, x: window.innerWidth * 0.15, y: window.innerHeight * 0.32, rotation: 0},100)
+          .wait(500).to({alpha: 0.3}, 100).wait(4400).to({alpha: 1}, 100)
+          .wait(700).to({alpha: 0.3}, 100).wait(4900).to({alpha: 1}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(4300).to({alpha: 1}, 100);
+
+      var linking_animation_6 = new createjs.Bitmap(queue.getResult("linking_right"));
+      linking_animation_6.scaleX = ratio * 1.2;
+      linking_animation_6.scaleY = ratio * 1.2;
+      linking_animation_6.alpha = 0;
+      linking_animation_6.regX = 127;
+      linking_animation_6.regY = 117;
+      linking_animation_6.x = window.innerWidth * 0.15;
+      linking_animation_6.y = window.innerHeight * 0.32;
+      stage.addChild(linking_animation_6);
+      createjs.Tween.get(linking_animation_6)
+          .wait(35200)
+          .to({y: window.innerHeight * 0.43, alpha: 1}, 100)
+          .wait(300).to({alpha: 0.3}, 100).wait(4400).to({alpha: 1}, 100)
+          .wait(700).to({alpha: 0.3}, 100).wait(4900).to({alpha: 1}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(4300).to({alpha: 1}, 100);
+
+      var circle_animation_7_1 = new createjs.Bitmap(queue.getResult("circle1"));
+      circle_animation_7_1.scaleX = ratio * 5;
+      circle_animation_7_1.scaleY = ratio * 5;
+      circle_animation_7_1.alpha = 0;
+      circle_animation_7_1.regX = 234;
+      circle_animation_7_1.regY = 234;
+      circle_animation_7_1.x = window.innerWidth * 0.15;
+      circle_animation_7_1.y = window.innerHeight * 0.54;
+      stage.addChild(circle_animation_7_1);
+      createjs.Tween.get(circle_animation_7_1)
+          .wait(35300)
+          .to({scaleX: ratio * 0.5, scaleY: ratio * 0.5, alpha:1},200)
+          .wait(100)
+          .to({scaleX: ratio, scaleY: ratio, x:window.innerWidth * 0.5, y: window.innerHeight * 0.382}, 200)
+          .wait(200)
+          .to({rotation: -90}, 200)
+          .wait(200)
+          .to({rotation: -200}, 3200)
+          .wait(200)
+          .to({scaleX: ratio * 0.5, scaleY: ratio * 0.5, x: window.innerWidth * 0.15, y: window.innerHeight * 0.54, rotation: 0},100)
+          .wait(1000).to({alpha: 0.3}, 100).wait(4900).to({alpha: 1}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(4300).to({alpha: 1}, 100);
+
+      var circle_animation_7_2 = new createjs.Bitmap(queue.getResult("circle2"));
+      circle_animation_7_2.scaleX = ratio * 5;
+      circle_animation_7_2.scaleY = ratio * 5;
+      circle_animation_7_2.alpha = 0;
+      circle_animation_7_2.regX = 234;
+      circle_animation_7_2.regY = 234;
+      circle_animation_7_2.x = window.innerWidth * 0.15;
+      circle_animation_7_2.y = window.innerHeight * 0.54;
+      stage.addChild(circle_animation_7_2);
+      createjs.Tween.get(circle_animation_7_2)
+          .wait(35300)
+          .to({scaleX: ratio * 0.5, scaleY: ratio * 0.5, alpha:1},200)
+          .wait(100)
+          .to({scaleX: ratio, scaleY: ratio, x:window.innerWidth * 0.5, y: window.innerHeight * 0.382}, 200)
+          .wait(200)
+          .to({rotation: 90}, 200)
+          .wait(200)
+          .to({rotation: 200}, 3200)
+          .wait(200)
+          .to({scaleX: ratio * 0.5, scaleY: ratio * 0.5, x: window.innerWidth * 0.15, y: window.innerHeight * 0.54, rotation: 0},100)
+          .wait(1000).to({alpha: 0.3}, 100).wait(4900).to({alpha: 1}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(4300).to({alpha: 1}, 100);
+
+      var dot = new createjs.Bitmap(queue.getResult("dot"));
+      dot.scaleX = 0;
+      dot.scaleY = 0;
+      dot.alpha = 0;
+      dot.regX = 288;
+      dot.regY = 288;
+      dot.x = window.innerWidth * 0.5;
+      dot.y = window.innerHeight * 0.382;
+      stage.addChild(dot);
+      createjs.Tween.get(dot)
+          .wait(36100)
+          .to({alpha: 1, scaleX: ratio * 0.8, scaleY: ratio * 0.8}, 200)
+          .wait(700)
+          .to({rotation: 180}, 1500)
+          .wait(1300)
+          .to({scaleX: ratio * 0.4, scaleY: ratio * 0.4, x: window.innerWidth * 0.15, y: window.innerHeight * 0.54, rotation: 0},100)
+          .wait(1000).to({alpha: 0.3}, 100).wait(4900).to({alpha: 1}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(4300).to({alpha: 1}, 100);
+
+      var linking_animation_7 = new createjs.Bitmap(queue.getResult("linking_x"));
+      linking_animation_7.scaleX = ratio;
+      linking_animation_7.scaleY = ratio;
+      linking_animation_7.alpha = 0;
+      linking_animation_7.regX = 41;
+      linking_animation_7.regY = 18;
+      linking_animation_7.x = window.innerWidth * 0.15;
+      linking_animation_7.y = window.innerHeight * 0.54;
+      stage.addChild(linking_animation_7);
+      createjs.Tween.get(linking_animation_7)
+          .wait(40200)
+          .to({x: window.innerWidth * 0.325, y: window.innerHeight * 0.58, alpha: 1}, 100)
+          .wait(600).to({alpha: 0.3}, 100).wait(4900).to({alpha: 1}, 100)
+          .wait(800).to({alpha: 0.3}, 100).wait(4300).to({alpha: 1}, 100);
+
+      var circle_animation_8_1 = new createjs.Bitmap(queue.getResult("circle1"));
+      circle_animation_8_1.scaleX = ratio * 5;
+      circle_animation_8_1.scaleY = ratio * 5;
+      circle_animation_8_1.alpha = 0;
+      circle_animation_8_1.regX = 234;
+      circle_animation_8_1.regY = 234;
+      circle_animation_8_1.x = window.innerWidth * 0.5;
+      circle_animation_8_1.y = window.innerHeight * 0.62;
+      stage.addChild(circle_animation_8_1);
+      createjs.Tween.get(circle_animation_8_1)
+          .wait(40500)
+          .to({scaleX: ratio * 0.5, scaleY: ratio * 0.5, alpha:1},200)
+          .wait(200)
+          .to({y: window.innerHeight * 0.382}, 200)
+          .wait(200)
+          .to({scaleX: ratio, scaleY: ratio}, 200)
+          .wait(200)
+          .to({rotation: -200}, 300)
+          .wait(200)
+          .to({rotation: -90}, 3100)
+          .wait(200)
+          .to({scaleX: ratio * 0.5, scaleY: ratio * 0.5}, 200)
+          .wait(200)
+          .to({x: window.innerWidth * 0.5, y: window.innerHeight * 0.62, rotation: 0},100)
+          .wait(800).to({alpha: 0.3}, 100).wait(4300).to({alpha: 1}, 100);
+
+      var circle_animation_8_2 = new createjs.Bitmap(queue.getResult("circle2"));
+      circle_animation_8_2.scaleX = ratio * 5;
+      circle_animation_8_2.scaleY = ratio * 5;
+      circle_animation_8_2.alpha = 0;
+      circle_animation_8_2.regX = 234;
+      circle_animation_8_2.regY = 234;
+      circle_animation_8_2.x = window.innerWidth * 0.5;
+      circle_animation_8_2.y = window.innerHeight * 0.62;
+      stage.addChild(circle_animation_8_2);
+      createjs.Tween.get(circle_animation_8_2)
+          .wait(40500)
+          .to({scaleX: ratio * 0.5, scaleY: ratio * 0.5, alpha:1},200)
+          .wait(200)
+          .to({y: window.innerHeight * 0.382}, 200)
+          .wait(200)
+          .to({scaleX: ratio, scaleY: ratio}, 200)
+          .wait(200)
+          .to({rotation: 200}, 300)
+          .wait(200)
+          .to({rotation: 90}, 3100)
+          .wait(200)
+          .to({scaleX: ratio * 0.5, scaleY: ratio * 0.5}, 200)
+          .wait(200)
+          .to({x: window.innerWidth * 0.5, y: window.innerHeight * 0.62, rotation: 0},100)
+          .wait(800).to({alpha: 0.3}, 100).wait(4300).to({alpha: 1}, 100);
+
+      var china2 = new createjs.Bitmap(queue.getResult("china2"));
+      china2.scaleX = 0;
+      china2.scaleY = 0;
+      china2.alpha = 0;
+      china2.regX = 240;
+      china2.regY = 240;
+      china2.x = window.innerWidth * 0.5;
+      china2.y = window.innerHeight * 0.382;
+      stage.addChild(china2);
+      createjs.Tween.get(china2)
+          .wait(41700)
+          .to({alpha: 1, scaleX: ratio * 0.8, scaleY: ratio * 0.8}, 300)
+          .wait(3500)
+          .to({scaleX: ratio * 0.4, scaleY: ratio * 0.4}, 200)
+          .wait(200)
+          .to({x: window.innerWidth * 0.5, y: window.innerHeight * 0.62, rotation: 0},100)
+          .wait(800).to({alpha: 0.3}, 100).wait(4300).to({alpha: 1}, 100);
+
+      var linking_animation_8 = new createjs.Bitmap(queue.getResult("linking_x"));
+      linking_animation_8.scaleX = ratio;
+      linking_animation_8.scaleY = ratio;
+      linking_animation_8.alpha = 0;
+      linking_animation_8.regX = 41;
+      linking_animation_8.regY = 18;
+      linking_animation_8.x = window.innerWidth * 0.5;
+      linking_animation_8.y = window.innerHeight * 0.62;
+      stage.addChild(linking_animation_8);
+      createjs.Tween.get(linking_animation_8)
+          .wait(46100)
+          .to({x: window.innerWidth * 0.675, y: window.innerHeight * 0.66, alpha: 1}, 100)
+          .wait(600).to({alpha: 0.3}, 100).wait(4300).to({alpha: 1}, 100);
+
+      var circle_animation_9_1 = new createjs.Bitmap(queue.getResult("circle1"));
+      circle_animation_9_1.scaleX = ratio * 5;
+      circle_animation_9_1.scaleY = ratio * 5;
+      circle_animation_9_1.alpha = 0;
+      circle_animation_9_1.regX = 234;
+      circle_animation_9_1.regY = 234;
+      circle_animation_9_1.x = window.innerWidth * 0.85;
+      circle_animation_9_1.y = window.innerHeight * 0.7;
+      stage.addChild(circle_animation_9_1);
+      createjs.Tween.get(circle_animation_9_1)
+          .wait(46250)
+          .to({scaleX: ratio * 0.5, scaleY: ratio * 0.5, alpha:1},150)
+          .wait(150)
+          .to({scaleX: ratio, scaleY: ratio, x: window.innerWidth * 0.5, y: window.innerHeight * 0.382}, 150)
+          .wait(400)
+          .to({rotation: -180}, 200)
+          .wait(200)
+          .to({rotation: -50}, 3300)
+          .wait(400)
+          .to({scaleX: ratio * 0.5, scaleY: ratio * 0.5, x: window.innerWidth * 0.85, y: window.innerHeight * 0.7, rotation: 0},100);
+
+      var circle_animation_9_2 = new createjs.Bitmap(queue.getResult("circle2"));
+      circle_animation_9_2.scaleX = ratio * 5;
+      circle_animation_9_2.scaleY = ratio * 5;
+      circle_animation_9_2.alpha = 0;
+      circle_animation_9_2.regX = 234;
+      circle_animation_9_2.regY = 234;
+      circle_animation_9_2.x = window.innerWidth * 0.85;
+      circle_animation_9_2.y = window.innerHeight * 0.7;
+      stage.addChild(circle_animation_9_2);
+      createjs.Tween.get(circle_animation_9_2)
+          .wait(46250)
+          .to({scaleX: ratio * 0.5, scaleY: ratio * 0.5, alpha:1},150)
+          .wait(150)
+          .to({scaleX: ratio, scaleY: ratio, x: window.innerWidth * 0.5, y: window.innerHeight * 0.382}, 150)
+          .wait(400)
+          .to({rotation: 180}, 200)
+          .wait(200)
+          .to({rotation: 50}, 3300)
+          .wait(400)
+          .to({scaleX: ratio * 0.5, scaleY: ratio * 0.5, x: window.innerWidth * 0.85, y: window.innerHeight * 0.7, rotation: 0},100);
+
+      var timeline = new createjs.Bitmap(queue.getResult("timeline"));
+      timeline.scaleX = 0;
+      timeline.scaleY = 0;
+      timeline.alpha = 0;
+      timeline.regX = 213;
+      timeline.regY = 212;
+      timeline.x = window.innerWidth * 0.44;
+      timeline.y = window.innerHeight * 0.382;
+      stage.addChild(timeline);
+      createjs.Tween.get(timeline)
+          .wait(47100)
+          .to({alpha: 1, scaleX: ratio * 0.8, scaleY: ratio * 0.8}, 300)
+          .wait(3800)
+          .to({scaleX: ratio * 0.5, scaleY: ratio * 0.5, x: window.innerWidth * 0.82, y: window.innerHeight * 0.7, rotation: 0},100);
+
+      var year_1992 = new createjs.Bitmap(queue.getResult("1992"));
+      year_1992.scaleX = 0;
+      year_1992.scaleY = 0;
+      year_1992.alpha = 0;
+      year_1992.regX = 213;
+      year_1992.regY = 212;
+      year_1992.x = window.innerWidth * 0.52;
+      year_1992.y = window.innerHeight * 0.34;
+      stage.addChild(year_1992);
+      createjs.Tween.get(year_1992)
+          .wait(47100)
+          .to({alpha: 1, scaleX: ratio * 0.8, scaleY: ratio * 0.8}, 300)
+          .wait(200)
+          .to({x: window.innerWidth * 0.52, y: window.innerHeight * 0.26, alpha: 0}, 1000);
+
+      var year_1993 = new createjs.Bitmap(queue.getResult("1993"));
+      year_1993.scaleX = 0;
+      year_1993.scaleY = 0;
+      year_1993.alpha = 0;
+      year_1993.regX = 212;
+      year_1993.regY = 212;
+      year_1993.x = window.innerWidth * 0.52;
+      year_1993.y = window.innerHeight * 0.42;
+      stage.addChild(year_1993);
+      createjs.Tween.get(year_1993)
+          .wait(47100)
+          .to({alpha: 1, scaleX: ratio * 0.8, scaleY: ratio * 0.8}, 300)
+          .wait(200)
+          .to({x: window.innerWidth * 0.52, y: window.innerHeight * 0.34}, 1000)
+          .wait(2600)
+          .to({scaleX: ratio * 0.4, scaleY: ratio * 0.4, x: window.innerWidth * 0.86, y: window.innerHeight * 0.68, rotation: 0},100);
+
+      var year_1994 = new createjs.Bitmap(queue.getResult("1994"));
+      year_1994.scaleX = 0;
+      year_1994.scaleY = 0;
+      year_1994.alpha = 0;
+      year_1994.regX = 212;
+      year_1994.regY = 212;
+      year_1994.x = window.innerWidth * 0.52;
+      year_1994.y = window.innerHeight * 0.5;
+      stage.addChild(year_1994);
+      createjs.Tween.get(year_1994)
+          .wait(47100)
+          .to({alpha: 1, scaleX: ratio * 0.8, scaleY: ratio * 0.8}, 300)
+          .wait(200)
+          .to({x: window.innerWidth * 0.52, y: window.innerHeight * 0.42}, 1000)
+          .wait(2600)
+          .to({scaleX: ratio * 0.4, scaleY: ratio * 0.4, x: window.innerWidth * 0.86, y: window.innerHeight * 0.72, rotation: 0},100);
+    }
+
+    function birthday() {
+
+      var birthday = new createjs.Bitmap(queue.getResult("birthday"));
+      birthday.scaleX = ratio * 2.5;
+      birthday.scaleY = ratio * 2.5;
+      birthday.alpha = 0;
+      birthday.regX = 75;
+      birthday.regY = 23.5;
+      birthday.x = window.innerWidth * 0.5;
+      birthday.y = window.innerHeight * 0.88;
+      stage.addChild(birthday);
+      createjs.Tween.get(birthday)
+          .to({alpha: 1}, 800);
+
+      var txt_birthday = new createjs.Text("输入生日", "30px Arial", "#FFFFFF");
+      txt_birthday.scaleX = ratio * 1;
+      txt_birthday.scaleY = ratio * 1;
+      txt_birthday.regX = 60;
+      txt_birthday.regY = -10;
+      txt_birthday.alpha = 0.3;
+      txt_birthday.x = window.innerWidth * 0.5;
+      txt_birthday.y = window.innerHeight * 0.88;
+      txt_birthday.textBaseline = "alphabetic";
+      stage.addChild(txt_birthday);
+
+      createjs.Tween.get(txt_birthday, {loop: true})
+          .to({alpha: 1}, 800)
+          .to({alpha: 0.3}, 800);
+
+      birthday_sto = setTimeout(function(){
+        document.getElementById("skip").style.display = "none";
+        document.getElementById("replay").style.display = "block";
+        document.getElementById("input").style.display ="block";
+      },300)
+
+    }
+
+    function skip() {
+
+      document.getElementById('skip').style.display = 'none';
+      clearAll();
+
+      var circle_animation_1_1 = new createjs.Bitmap(queue.getResult("circle1"));
+      circle_animation_1_1.scaleX = ratio * 5;
+      circle_animation_1_1.scaleY = ratio * 5;
+      circle_animation_1_1.alpha = 0;
+      circle_animation_1_1.regX = 234;
+      circle_animation_1_1.regY = 234;
+      circle_animation_1_1.x = window.innerWidth/2;
+      circle_animation_1_1.y = window.innerHeight * 0.382;
+      stage.addChild(circle_animation_1_1);
+      createjs.Tween.get(circle_animation_1_1)
+          .to({alpha: 1, x: window.innerWidth * 0.15, y: window.innerHeight * 0.1, scaleX: ratio * 0.5, scaleY: ratio * 0.5, rotation: 0}, 100);
+
+      var circle_animation_1_2 = new createjs.Bitmap(queue.getResult("circle2"));
+      circle_animation_1_2.scaleX = ratio * 5;
+      circle_animation_1_2.scaleY = ratio * 5;
+      circle_animation_1_2.alpha = 0;
+      circle_animation_1_2.regX = 234;
+      circle_animation_1_2.regY = 234;
+      circle_animation_1_2.x = window.innerWidth/2;
+      circle_animation_1_2.y = window.innerHeight * 0.382;
+      stage.addChild(circle_animation_1_2);
+      createjs.Tween.get(circle_animation_1_2)
+          .to({alpha: 1, x: window.innerWidth * 0.15, y: window.innerHeight * 0.1, scaleX: ratio * 0.5, scaleY: ratio * 0.5, rotation: 0}, 100);
+
+      var sun = new createjs.Bitmap(queue.getResult("sun"));
+      sun.scaleX = ratio * 0.7;
+      sun.scaleY = ratio * 0.7;
+      sun.alpha = 0;
+      sun.regX = 152;
+      sun.regY = 152;
+      sun.x = window.innerWidth * 0.5;
+      sun.y = window.innerHeight * 0.382;
+      stage.addChild(sun);
+      createjs.Tween.get(sun)
+          .to({alpha: 1, x: window.innerWidth * 0.15, y: window.innerHeight * 0.1, scaleX: ratio * 0.35, scaleY: ratio * 0.35}, 100);
+
+      var earth = new createjs.Bitmap(queue.getResult("earth"));
+      earth.scaleX = ratio * 0.7;
+      earth.scaleY = ratio * 0.7;
+      earth.alpha = 0;
+      earth.regX = 152;
+      earth.regY = 152;
+      earth.x = window.innerWidth * 0.5;
+      earth.y = window.innerHeight * 0.387;
+      stage.addChild(earth);
+      createjs.Tween.get(earth)
+          .to({alpha: 1, x: window.innerWidth * 0.22, y: window.innerHeight * 0.1, scaleX: ratio * 0.1, scaleY: ratio * 0.1}, 100);
+
+      var linking_animation_1 = new createjs.Bitmap(queue.getResult("linking_x"));
+      linking_animation_1.scaleX = ratio;
+      linking_animation_1.scaleY = ratio;
+      linking_animation_1.alpha = 0;
+      linking_animation_1.regX = 41;
+      linking_animation_1.regY = 18;
+      linking_animation_1.x = window.innerWidth * 0.15;
+      linking_animation_1.y = window.innerHeight * 0.1;
+      stage.addChild(linking_animation_1);
+      createjs.Tween.get(linking_animation_1)
+          .to({x: window.innerWidth * 0.325, y: window.innerHeight * 0.14, alpha: 1}, 100);
+
+      var circle_animation_2_1 = new createjs.Bitmap(queue.getResult("circle1"));
+      circle_animation_2_1.scaleX = ratio * 5;
+      circle_animation_2_1.scaleY = ratio * 5;
+      circle_animation_2_1.alpha = 0;
+      circle_animation_2_1.regX = 234;
+      circle_animation_2_1.regY = 234;
+      circle_animation_2_1.x = window.innerWidth/2;
+      circle_animation_2_1.y = window.innerHeight * 0.382;
+      stage.addChild(circle_animation_2_1);
+      createjs.Tween.get(circle_animation_2_1)
+          .to({alpha: 1, x: window.innerWidth * 0.5, y: window.innerHeight * 0.18, scaleX: ratio * 0.5, scaleY: ratio * 0.5, rotation: 0}, 100);
+
+      var circle_animation_2_2 = new createjs.Bitmap(queue.getResult("circle2"));
+      circle_animation_2_2.scaleX = ratio * 5;
+      circle_animation_2_2.scaleY = ratio * 5;
+      circle_animation_2_2.alpha = 0;
+      circle_animation_2_2.regX = 234;
+      circle_animation_2_2.regY = 234;
+      circle_animation_2_2.x = window.innerWidth/2;
+      circle_animation_2_2.y = window.innerHeight * 0.382;
+      stage.addChild(circle_animation_2_2);
+      createjs.Tween.get(circle_animation_2_2)
+          .to({alpha: 1, x: window.innerWidth * 0.5, y: window.innerHeight * 0.18, scaleX: ratio * 0.5, scaleY: ratio * 0.5, rotation: 0}, 100);
+
+      var order = new createjs.Bitmap(queue.getResult("order"));
+      order.scaleX = ratio * 0.5;
+      order.scaleY = ratio * 0.5;
+      order.alpha = 0;
+      order.regX = 200;
+      order.regY = 200;
+      order.x = window.innerWidth/2;
+      order.y = window.innerHeight * 0.382;
+      stage.addChild(order);
+      createjs.Tween.get(order)
+          .to({alpha: 1, x: window.innerWidth * 0.5, y: window.innerHeight * 0.18, scaleX: ratio * 0.4, scaleY: ratio * 0.4}, 100);
+
+      var linking_animation_2 = new createjs.Bitmap(queue.getResult("linking_x"));
+      linking_animation_2.scaleX = ratio;
+      linking_animation_2.scaleY = ratio;
+      linking_animation_2.alpha = 0;
+      linking_animation_2.regX = 41;
+      linking_animation_2.regY = 18;
+      linking_animation_2.x = window.innerWidth * 0.5;
+      linking_animation_2.y = window.innerHeight * 0.18;
+      stage.addChild(linking_animation_2);
+      createjs.Tween.get(linking_animation_2)
+          .to({x: window.innerWidth * 0.675, y: window.innerHeight * 0.22, alpha: 1}, 100);
+
+      var circle_animation_3_1 = new createjs.Bitmap(queue.getResult("circle1"));
+      circle_animation_3_1.scaleX = ratio * 5;
+      circle_animation_3_1.scaleY = ratio * 5;
+      circle_animation_3_1.alpha = 0;
+      circle_animation_3_1.regX = 234;
+      circle_animation_3_1.regY = 234;
+      circle_animation_3_1.x = window.innerWidth * 0.85;
+      circle_animation_3_1.y = window.innerHeight * 0.26;
+      stage.addChild(circle_animation_3_1);
+      createjs.Tween.get(circle_animation_3_1)
+          .to({alpha: 1, scaleX: ratio * 0.5, scaleY: ratio * 0.5, x: window.innerWidth * 0.85, y: window.innerHeight * 0.26, rotation: 0}, 100);
+
+      var circle_animation_3_2 = new createjs.Bitmap(queue.getResult("circle2"));
+      circle_animation_3_2.scaleX = ratio * 5;
+      circle_animation_3_2.scaleY = ratio * 5;
+      circle_animation_3_2.alpha = 0;
+      circle_animation_3_2.regX = 234;
+      circle_animation_3_2.regY = 234;
+      circle_animation_3_2.x = window.innerWidth * 0.85;
+      circle_animation_3_2.y = window.innerHeight * 0.26;
+      stage.addChild(circle_animation_3_2);
+      createjs.Tween.get(circle_animation_3_2)
+          .to({alpha: 1, scaleX: ratio * 0.5, scaleY: ratio * 0.5, x: window.innerWidth * 0.85, y: window.innerHeight * 0.26, rotation: 0}, 100);
+
+      var question = new createjs.Bitmap(queue.getResult("question"));
+      question.scaleX = ratio * 0.7;
+      question.scaleY = ratio * 0.7;
+      question.alpha = 0;
+      question.regX = 310;
+      question.regY = 300;
+      question.x = window.innerWidth * 0.5;
+      question.y = window.innerHeight * 0.382;
+      stage.addChild(question);
+      createjs.Tween.get(question)
+          .to({alpha: 1, scaleX: ratio * 0.3, scaleY: ratio * 0.3, x: window.innerWidth * 0.85, y: window.innerHeight * 0.26, rotation: 0}, 100);
+
+      var linking_animation_3 = new createjs.Bitmap(queue.getResult("linking_right"));
+      linking_animation_3.scaleX = ratio * 1.2;
+      linking_animation_3.scaleY = ratio * 1.2;
+      linking_animation_3.alpha = 0;
+      linking_animation_3.regX = 127;
+      linking_animation_3.regY = 117;
+      linking_animation_3.x = window.innerWidth * 0.85;
+      linking_animation_3.y = window.innerHeight * 0.26;
+      stage.addChild(linking_animation_3);
+      createjs.Tween.get(linking_animation_3)
+          .to({y: window.innerHeight * 0.37, alpha: 1}, 100);
+
+      var circle_animation_4_1 = new createjs.Bitmap(queue.getResult("circle1"));
+      circle_animation_4_1.scaleX = ratio * 0.5;
+      circle_animation_4_1.scaleY = ratio * 0.5;
+      circle_animation_4_1.alpha = 0;
+      circle_animation_4_1.regX = 234;
+      circle_animation_4_1.regY = 234;
+      circle_animation_4_1.x = window.innerWidth * 0.85;
+      circle_animation_4_1.y = window.innerHeight * 0.48;
+      stage.addChild(circle_animation_4_1);
+      createjs.Tween.get(circle_animation_4_1)
+          .to({alpha: 1, scaleX: ratio * 0.5, scaleY: ratio * 0.5, x: window.innerWidth * 0.85, y: window.innerHeight * 0.48, rotation: 0}, 100);
+
+      var circle_animation_4_2 = new createjs.Bitmap(queue.getResult("circle2"));
+      circle_animation_4_2.scaleX = ratio * 0.5;
+      circle_animation_4_2.scaleY = ratio * 0.5;
+      circle_animation_4_2.alpha = 0;
+      circle_animation_4_2.regX = 234;
+      circle_animation_4_2.regY = 234;
+      circle_animation_4_2.x = window.innerWidth * 0.85;
+      circle_animation_4_2.y = window.innerHeight * 0.48;
+      stage.addChild(circle_animation_4_2);
+      createjs.Tween.get(circle_animation_4_2)
+          .to({alpha: 1, scaleX: ratio * 0.5, scaleY: ratio * 0.5, x: window.innerWidth * 0.85, y: window.innerHeight * 0.48, rotation: 0}, 100);
+
+
+
+      var earth2 = new createjs.Bitmap(queue.getResult("earth2"));
+      earth2.scaleX = 0;
+      earth2.scaleY = 0;
+      earth2.alpha = 0;
+      earth2.regX = 202;
+      earth2.regY = 202;
+      earth2.x = window.innerWidth * 0.5;
+      earth2.y = window.innerHeight * 0.382;
+      stage.addChild(earth2);
+      createjs.Tween.get(earth2)
+          .to({alpha: 1, x: window.innerWidth * 0.85, y: window.innerHeight * 0.48, scaleX: ratio * 0.4, scaleY: ratio * 0.4}, 100);
+
+      var linking_animation_4 = new createjs.Bitmap(queue.getResult("linking_x"));
+      linking_animation_4.scaleX = ratio;
+      linking_animation_4.scaleY = ratio;
+      linking_animation_4.alpha = 0;
+      linking_animation_4.regX = 41;
+      linking_animation_4.regY = 18;
+      linking_animation_4.x = window.innerWidth * 0.85;
+      linking_animation_4.y = window.innerHeight * 0.48;
+      stage.addChild(linking_animation_4);
+      createjs.Tween.get(linking_animation_4)
+          .to({x: window.innerWidth * 0.675, y: window.innerHeight * 0.44, alpha: 1}, 100);
+
+      var circle_animation_5_1 = new createjs.Bitmap(queue.getResult("circle1"));
+      circle_animation_5_1.scaleX = ratio * 5;
+      circle_animation_5_1.scaleY = ratio * 5;
+      circle_animation_5_1.alpha = 0;
+      circle_animation_5_1.regX = 234;
+      circle_animation_5_1.regY = 234;
+      circle_animation_5_1.x = window.innerWidth * 0.5;
+      circle_animation_5_1.y = window.innerHeight * 0.4;
+      stage.addChild(circle_animation_5_1);
+      createjs.Tween.get(circle_animation_5_1)
+          .to({alpha: 1, scaleX: ratio * 0.5, scaleY: ratio * 0.5, rotation: 0},100);
+
+      var circle_animation_5_2 = new createjs.Bitmap(queue.getResult("circle2"));
+      circle_animation_5_2.scaleX = ratio * 5;
+      circle_animation_5_2.scaleY = ratio * 5;
+      circle_animation_5_2.alpha = 0;
+      circle_animation_5_2.regX = 234;
+      circle_animation_5_2.regY = 234;
+      circle_animation_5_2.x = window.innerWidth * 0.5;
+      circle_animation_5_2.y = window.innerHeight * 0.4;
+      stage.addChild(circle_animation_5_2);
+      createjs.Tween.get(circle_animation_5_2)
+          .to({alpha: 1, scaleX: ratio * 0.5, scaleY: ratio * 0.5, rotation: 0},100);
+
+      var china = new createjs.Bitmap(queue.getResult("china"));
+      china.scaleX = 0;
+      china.scaleY = 0;
+      china.alpha = 0;
+      china.regX = 280;
+      china.regY = 270;
+      china.x = window.innerWidth * 0.5;
+      china.y = window.innerHeight * 0.4;
+      stage.addChild(china);
+      createjs.Tween.get(china)
+          .to({alpha: 1, scaleX: ratio * 0.4, scaleY: ratio * 0.4},100);
+
+      var linking_animation_5 = new createjs.Bitmap(queue.getResult("linking_x"));
+      linking_animation_5.scaleX = ratio;
+      linking_animation_5.scaleY = ratio;
+      linking_animation_5.alpha = 0;
+      linking_animation_5.regX = 41;
+      linking_animation_5.regY = 18;
+      linking_animation_5.x = window.innerWidth * 0.5;
+      linking_animation_5.y = window.innerHeight * 0.4;
+      stage.addChild(linking_animation_5);
+      createjs.Tween.get(linking_animation_5)
+          .to({x: window.innerWidth * 0.325, y: window.innerHeight * 0.36, alpha: 1}, 100);
+
+      var circle_animation_6_1 = new createjs.Bitmap(queue.getResult("circle1"));
+      circle_animation_6_1.scaleX = ratio * 5;
+      circle_animation_6_1.scaleY = ratio * 5;
+      circle_animation_6_1.alpha = 0;
+      circle_animation_6_1.regX = 234;
+      circle_animation_6_1.regY = 234;
+      circle_animation_6_1.x = window.innerWidth * 0.15;
+      circle_animation_6_1.y = window.innerHeight * 0.32;
+      stage.addChild(circle_animation_6_1);
+      createjs.Tween.get(circle_animation_6_1)
+          .to({alpha: 1, scaleX: ratio * 0.5, scaleY: ratio * 0.5, x: window.innerWidth * 0.15, y: window.innerHeight * 0.32, rotation: 0},100);
+
+      var circle_animation_6_2 = new createjs.Bitmap(queue.getResult("circle2"));
+      circle_animation_6_2.scaleX = ratio * 5;
+      circle_animation_6_2.scaleY = ratio * 5;
+      circle_animation_6_2.alpha = 0;
+      circle_animation_6_2.regX = 234;
+      circle_animation_6_2.regY = 234;
+      circle_animation_6_2.x = window.innerWidth * 0.15;
+      circle_animation_6_2.y = window.innerHeight * 0.32;
+      stage.addChild(circle_animation_6_2);
+      createjs.Tween.get(circle_animation_6_2)
+          .to({alpha: 1, scaleX: ratio * 0.5, scaleY: ratio * 0.5, x: window.innerWidth * 0.15, y: window.innerHeight * 0.32, rotation: 0},100);
+
+      var line = new createjs.Bitmap(queue.getResult("line"));
+      line.scaleX = 0;
+      line.scaleY = 0;
+      line.alpha = 0;
+      line.regX = 254;
+      line.regY = 254;
+      line.x = window.innerWidth * 0.5;
+      line.y = window.innerHeight * 0.382;
+      stage.addChild(line);
+      createjs.Tween.get(line)
+          .to({alpha: 1, scaleX: ratio * 0.4, scaleY: ratio * 0.4, x: window.innerWidth * 0.15, y: window.innerHeight * 0.32, rotation: 0},100);
+
+      var linking_animation_6 = new createjs.Bitmap(queue.getResult("linking_right"));
+      linking_animation_6.scaleX = ratio * 1.2;
+      linking_animation_6.scaleY = ratio * 1.2;
+      linking_animation_6.alpha = 0;
+      linking_animation_6.regX = 127;
+      linking_animation_6.regY = 117;
+      linking_animation_6.x = window.innerWidth * 0.15;
+      linking_animation_6.y = window.innerHeight * 0.32;
+      stage.addChild(linking_animation_6);
+      createjs.Tween.get(linking_animation_6)
+          .to({y: window.innerHeight * 0.43, alpha: 1}, 100);
+
+      var circle_animation_7_1 = new createjs.Bitmap(queue.getResult("circle1"));
+      circle_animation_7_1.scaleX = ratio * 5;
+      circle_animation_7_1.scaleY = ratio * 5;
+      circle_animation_7_1.alpha = 0;
+      circle_animation_7_1.regX = 234;
+      circle_animation_7_1.regY = 234;
+      circle_animation_7_1.x = window.innerWidth * 0.15;
+      circle_animation_7_1.y = window.innerHeight * 0.54;
+      stage.addChild(circle_animation_7_1);
+      createjs.Tween.get(circle_animation_7_1)
+          .to({alpha: 1, scaleX: ratio * 0.5, scaleY: ratio * 0.5, x: window.innerWidth * 0.15, y: window.innerHeight * 0.54, rotation: 0},100);
+
+      var circle_animation_7_2 = new createjs.Bitmap(queue.getResult("circle2"));
+      circle_animation_7_2.scaleX = ratio * 5;
+      circle_animation_7_2.scaleY = ratio * 5;
+      circle_animation_7_2.alpha = 0;
+      circle_animation_7_2.regX = 234;
+      circle_animation_7_2.regY = 234;
+      circle_animation_7_2.x = window.innerWidth * 0.15;
+      circle_animation_7_2.y = window.innerHeight * 0.54;
+      stage.addChild(circle_animation_7_2);
+      createjs.Tween.get(circle_animation_7_2)
+          .to({alpha: 1, scaleX: ratio * 0.5, scaleY: ratio * 0.5, x: window.innerWidth * 0.15, y: window.innerHeight * 0.54, rotation: 0},100);
+
+      var dot = new createjs.Bitmap(queue.getResult("dot"));
+      dot.scaleX = 0;
+      dot.scaleY = 0;
+      dot.alpha = 0;
+      dot.regX = 288;
+      dot.regY = 288;
+      dot.x = window.innerWidth * 0.5;
+      dot.y = window.innerHeight * 0.382;
+      stage.addChild(dot);
+      createjs.Tween.get(dot)
+          .to({alpha: 1, alpha: 1, scaleX: ratio * 0.4, scaleY: ratio * 0.4, x: window.innerWidth * 0.15, y: window.innerHeight * 0.54, rotation: 0},100);
+
+      var linking_animation_7 = new createjs.Bitmap(queue.getResult("linking_x"));
+      linking_animation_7.scaleX = ratio;
+      linking_animation_7.scaleY = ratio;
+      linking_animation_7.alpha = 0;
+      linking_animation_7.regX = 41;
+      linking_animation_7.regY = 18;
+      linking_animation_7.x = window.innerWidth * 0.15;
+      linking_animation_7.y = window.innerHeight * 0.54;
+      stage.addChild(linking_animation_7);
+      createjs.Tween.get(linking_animation_7)
+          .to({x: window.innerWidth * 0.325, y: window.innerHeight * 0.58, alpha: 1}, 100)
+
+      var circle_animation_8_1 = new createjs.Bitmap(queue.getResult("circle1"));
+      circle_animation_8_1.scaleX = ratio * 5;
+      circle_animation_8_1.scaleY = ratio * 5;
+      circle_animation_8_1.alpha = 0;
+      circle_animation_8_1.regX = 234;
+      circle_animation_8_1.regY = 234;
+      circle_animation_8_1.x = window.innerWidth * 0.5;
+      circle_animation_8_1.y = window.innerHeight * 0.62;
+      stage.addChild(circle_animation_8_1);
+      createjs.Tween.get(circle_animation_8_1)
+          .to({alpha: 1, scaleX: ratio * 0.5, scaleY: ratio * 0.5, x: window.innerWidth * 0.5, y: window.innerHeight * 0.62, rotation: 0},100);
+
+      var circle_animation_8_2 = new createjs.Bitmap(queue.getResult("circle2"));
+      circle_animation_8_2.scaleX = ratio * 5;
+      circle_animation_8_2.scaleY = ratio * 5;
+      circle_animation_8_2.alpha = 0;
+      circle_animation_8_2.regX = 234;
+      circle_animation_8_2.regY = 234;
+      circle_animation_8_2.x = window.innerWidth * 0.5;
+      circle_animation_8_2.y = window.innerHeight * 0.62;
+      stage.addChild(circle_animation_8_2);
+      createjs.Tween.get(circle_animation_8_2)
+          .to({alpha: 1, scaleX: ratio * 0.5, scaleY: ratio * 0.5, x: window.innerWidth * 0.5, y: window.innerHeight * 0.62, rotation: 0},100);
+
+      var china2 = new createjs.Bitmap(queue.getResult("china2"));
+      china2.scaleX = 0;
+      china2.scaleY = 0;
+      china2.alpha = 0;
+      china2.regX = 240;
+      china2.regY = 240;
+      china2.x = window.innerWidth * 0.5;
+      china2.y = window.innerHeight * 0.382;
+      stage.addChild(china2);
+      createjs.Tween.get(china2)
+          .to({alpha: 1, scaleX: ratio * 0.4, scaleY: ratio * 0.4, x: window.innerWidth * 0.5, y: window.innerHeight * 0.62, rotation: 0},100);
+
+      var linking_animation_8 = new createjs.Bitmap(queue.getResult("linking_x"));
+      linking_animation_8.scaleX = ratio;
+      linking_animation_8.scaleY = ratio;
+      linking_animation_8.alpha = 0;
+      linking_animation_8.regX = 41;
+      linking_animation_8.regY = 18;
+      linking_animation_8.x = window.innerWidth * 0.5;
+      linking_animation_8.y = window.innerHeight * 0.62;
+      stage.addChild(linking_animation_8);
+      createjs.Tween.get(linking_animation_8)
+          .to({x: window.innerWidth * 0.675, y: window.innerHeight * 0.66, alpha: 1}, 100);
+
+      var circle_animation_9_1 = new createjs.Bitmap(queue.getResult("circle1"));
+      circle_animation_9_1.scaleX = ratio * 5;
+      circle_animation_9_1.scaleY = ratio * 5;
+      circle_animation_9_1.alpha = 0;
+      circle_animation_9_1.regX = 234;
+      circle_animation_9_1.regY = 234;
+      circle_animation_9_1.x = window.innerWidth * 0.85;
+      circle_animation_9_1.y = window.innerHeight * 0.7;
+      stage.addChild(circle_animation_9_1);
+      createjs.Tween.get(circle_animation_9_1)
+          .to({alpha: 1, scaleX: ratio * 0.5, scaleY: ratio * 0.5, x: window.innerWidth * 0.85, y: window.innerHeight * 0.7, rotation: 0},100);
+
+      var circle_animation_9_2 = new createjs.Bitmap(queue.getResult("circle2"));
+      circle_animation_9_2.scaleX = ratio * 5;
+      circle_animation_9_2.scaleY = ratio * 5;
+      circle_animation_9_2.alpha = 0;
+      circle_animation_9_2.regX = 234;
+      circle_animation_9_2.regY = 234;
+      circle_animation_9_2.x = window.innerWidth * 0.85;
+      circle_animation_9_2.y = window.innerHeight * 0.7;
+      stage.addChild(circle_animation_9_2);
+      createjs.Tween.get(circle_animation_9_2)
+          .to({alpha: 1, scaleX: ratio * 0.5, scaleY: ratio * 0.5, x: window.innerWidth * 0.85, y: window.innerHeight * 0.7, rotation: 0},100);
+
+      var timeline = new createjs.Bitmap(queue.getResult("timeline"));
+      timeline.scaleX = 0;
+      timeline.scaleY = 0;
+      timeline.alpha = 0;
+      timeline.regX = 213;
+      timeline.regY = 212;
+      timeline.x = window.innerWidth * 0.44;
+      timeline.y = window.innerHeight * 0.382;
+      stage.addChild(timeline);
+      createjs.Tween.get(timeline)
+          .to({alpha: 1, scaleX: ratio * 0.5, scaleY: ratio * 0.5, x: window.innerWidth * 0.82, y: window.innerHeight * 0.7, rotation: 0},100);
+
+      var year_1992 = new createjs.Bitmap(queue.getResult("1992"));
+      year_1992.scaleX = 0;
+      year_1992.scaleY = 0;
+      year_1992.alpha = 0;
+      year_1992.regX = 213;
+      year_1992.regY = 212;
+      year_1992.x = window.innerWidth * 0.52;
+      year_1992.y = window.innerHeight * 0.34;
+      stage.addChild(year_1992);
+      createjs.Tween.get(year_1992)
+          .to({alpha: 1, x: window.innerWidth * 0.52, y: window.innerHeight * 0.26, alpha: 0}, 1000);
+
+      var year_1993 = new createjs.Bitmap(queue.getResult("1993"));
+      year_1993.scaleX = 0;
+      year_1993.scaleY = 0;
+      year_1993.alpha = 0;
+      year_1993.regX = 212;
+      year_1993.regY = 212;
+      year_1993.x = window.innerWidth * 0.52;
+      year_1993.y = window.innerHeight * 0.42;
+      stage.addChild(year_1993);
+      createjs.Tween.get(year_1993)
+          .to({alpha: 1, scaleX: ratio * 0.4, scaleY: ratio * 0.4, x: window.innerWidth * 0.86, y: window.innerHeight * 0.68, rotation: 0},100);
+
+      var year_1994 = new createjs.Bitmap(queue.getResult("1994"));
+      year_1994.scaleX = 0;
+      year_1994.scaleY = 0;
+      year_1994.alpha = 0;
+      year_1994.regX = 212;
+      year_1994.regY = 212;
+      year_1994.x = window.innerWidth * 0.52;
+      year_1994.y = window.innerHeight * 0.5;
+      stage.addChild(year_1994);
+      createjs.Tween.get(year_1994)
+          .to({alpha: 1, scaleX: ratio * 0.4, scaleY: ratio * 0.4, x: window.innerWidth * 0.86, y: window.innerHeight * 0.72, rotation: 0},100);
+
+
+
+
+
+      birthday();
+
+    }
+
+    function replay() {
+
+      clearAll();
+      document.getElementById("replay").style.display ="none";
+      setTimeout('play()', 1000);
+
+    }
+
+    function playBGM() {
+
+      var bgm = document.getElementById("bgm");
+      if (bgm.paused) {
+        bgm.play();
+        document.getElementById('btn_play').style.visibility = 'hidden';
+        document.getElementById('btn_play').src = 'pics/musicon.png';
+        setTimeout("document.getElementById('btn_play').style.visibility = 'visible'", 300)
+      } else {
+        bgm.pause();
+        document.getElementById('btn_play').style.visibility = 'hidden';
+        document.getElementById('btn_play').src = 'pics/musicoff.png';
+        setTimeout("document.getElementById('btn_play').style.visibility = 'visible'", 300)
+      }
+    }
+
+    function input() {
+
+      if (document.getElementById("input").style.display == "block"){
+
+        clearAll();
+        document.getElementById("datepicker").style.visibility = "visible";
+
+        input_sto = setTimeout(function() {
+          var send = new createjs.Bitmap(queue.getResult("birthday"));
+          send.scaleX = ratio * 2.5;
+          send.scaleY = ratio * 2.5;
+          send.alpha = 0;
+          send.regX = 75;
+          send.regY = 23.5;
+          send.x = window.innerWidth * 0.5;
+          send.y = window.innerHeight * 0.88;
+          stage.addChild(send);
+          createjs.Tween.get(send)
+              .to({alpha: 1}, 800);
+
+          var txt_send = new createjs.Text("确  认", "30px Arial", "#FFFFFF");
+          txt_send.scaleX = ratio * 1;
+          txt_send.scaleY = ratio * 1;
+          txt_send.regX = 43;
+          txt_send.regY = -10;
+          txt_send.alpha = 0.3;
+          txt_send.x = window.innerWidth * 0.5;
+          txt_send.y = window.innerHeight * 0.88;
+          txt_send.textBaseline = "alphabetic";
+          stage.addChild(txt_send);
+          createjs.Tween.get(txt_send, {loop: true})
+              .to({alpha: 1}, 800)
+              .to({alpha: 0.3}, 800);
+
+          document.getElementById("input").style.display = "none";
+          document.getElementById("send").style.display = "block";
+
+        }, 2000);
+      }
+
+    }
+
+    function send() {
+
+      if (document.getElementById("send").style.display == "block") {
+
+        clearAll();
+        document.getElementById("datepicker").style.visibility = "hidden";
+        document.getElementById("birthday").style.visibility = "visible";
+        document.getElementById("content").style.visibility = "visible";
+
+        var birthday = $('#fullYear option:selected').val() + '-'
+            + $('#month option:selected').val() + '-' + $('#date option:selected').val();
+        $.ajax({
+          type:"GET",
+          data:"birthday=" + birthday,
+          url:"../api/promotion",
+          success:function(msg){
+            document.getElementById('ta_content').innerHTML = msg;
+            var lines = (msg.length - 46)/13 + 10;
+            document.getElementById('ta_content').style.height = lines * 40  + "px";
+            textticker();
+            document.getElementById('ta_birthday').value = birthday.replace(/-/g, "        ");
+          },
+          error:function(e){
+            alert(e);
+          }
+        });
+
+        send_sto = setTimeout(function(){
+
+          document.getElementById("send").style.display = "none";
+          document.getElementById("download").style.display = "block";
+
+          var download = new createjs.Bitmap(queue.getResult("birthday"));
+          download.scaleX = ratio * 2.5;
+          download.scaleY = ratio * 2.5;
+          download.alpha = 0;
+          download.regX = 75;
+          download.regY = 23.5;
+          download.x = window.innerWidth * 0.5;
+          download.y = window.innerHeight * 0.88;
+          stage.addChild(download);
+          createjs.Tween.get(download)
+              .to({alpha: 1}, 800);
+
+          var txt_download = new createjs.Text("OK", "30px Arial", "#FFFFFF");
+          txt_download.scaleX = ratio * 1;
+          txt_download.scaleY = ratio * 1;
+          txt_download.regX = 30;
+          txt_download.regY = -10;
+          txt_download.alpha = 0.3;
+          txt_download.x = window.innerWidth * 0.5;
+          txt_download.y = window.innerHeight * 0.88;
+          txt_download.textBaseline = "alphabetic";
+          stage.addChild(txt_download);
+          createjs.Tween.get(txt_download, {loop: true})
+              .to({alpha: 1}, 800)
+              .to({alpha: 0.3}, 800);
+
+
+        },2000);
+      }
+
+    }
+
+    function download() {
+
+      if (document.getElementById("download").style.display == "none") {
+        return;
+      }
+
+      clearAll();
+      document.getElementById("content").style.visibility = "hidden";
+      document.getElementById("birthday").style.visibility = "hidden";
+      document.getElementById("download").style.display = "none";
+
+      var txt_who_am_i = new createjs.Text("我是谁", "40px Arial", "#FFFFFF");
+      txt_who_am_i.scaleX = ratio;
+      txt_who_am_i.scaleY = ratio;
+      txt_who_am_i.regX = 60;
+      txt_who_am_i.alpha = 0;
+      txt_who_am_i.x = window.innerWidth * 0.5;
+      txt_who_am_i.y = window.innerHeight * 0.18;
+      txt_who_am_i.textBaseline = "alphabetic";
+      stage.addChild(txt_who_am_i);
+      createjs.Tween.get(txt_who_am_i)
+          .wait(500)
+          .to({alpha: 1}, 300)
+          .wait(1000)
+          .to({scaleX: ratio * 0.8, scaleY: ratio * 0.8, y: window.innerHeight * 0.12}, 200);
+
+      var txt_i_am = new createjs.Text("我是触摸未来", "40px Arial", "#FFFFFF");
+      txt_i_am.scaleX = 0;
+      txt_i_am.scaleY = 0;
+      txt_i_am.regX = 120;
+      txt_i_am.alpha = 0;
+      txt_i_am.x = window.innerWidth * 0.5;
+      txt_i_am.y = window.innerHeight * 0.18;
+      txt_i_am.textBaseline = "alphabetic";
+      stage.addChild(txt_i_am);
+      createjs.Tween.get(txt_i_am)
+          .wait(1700)
+          .to({scaleX: ratio, scaleY: ratio, alpha: 1}, 300);
+
+      var txt_team = new createjs.Text("TS-X 团队", "40px Arial", "#FFFFFF");
+      txt_team.scaleX = ratio * 0.5;
+      txt_team.scaleY = ratio * 0.5;
+      txt_team.regX = 90;
+      txt_team.alpha = 0;
+      txt_team.x = window.innerWidth * 0.5;
+      txt_team.y = window.innerHeight * 0.9;
+      txt_team.textBaseline = "alphabetic";
+      stage.addChild(txt_team);
+      createjs.Tween.get(txt_team)
+          .wait(1500)
+          .to({alpha: 0.5}, 1000);
+
+      var circle_download_1 = new createjs.Bitmap(queue.getResult("circle1"));
+      circle_download_1.scaleX = ratio * 5;
+      circle_download_1.scaleY = ratio * 5;
+      circle_download_1.alpha = 0;
+      circle_download_1.regX = 234;
+      circle_download_1.regY = 234;
+      circle_download_1.x = window.innerWidth/2;
+      circle_download_1.y = window.innerHeight * 0.382;
+      stage.addChild(circle_download_1);
+      createjs.Tween.get(circle_download_1)
+          .wait(3000)
+          .to({alpha: 1, scaleX: ratio, scaleY: ratio}, 200)
+          .wait(500)
+          .to({rotation: -75}, 200)
+          .wait(500)
+          .to({rotation: -2235}, 60000);
+
+      var circle_download_2 = new createjs.Bitmap(queue.getResult("circle2"));
+      circle_download_2.scaleX = ratio * 5;
+      circle_download_2.scaleY = ratio * 5;
+      circle_download_2.alpha = 0;
+      circle_download_2.regX = 234;
+      circle_download_2.regY = 234;
+      circle_download_2.x = window.innerWidth/2;
+      circle_download_2.y = window.innerHeight * 0.382;
+      stage.addChild(circle_download_2);
+      createjs.Tween.get(circle_download_2)
+          .wait(3000)
+          .to({alpha: 1, scaleX: ratio, scaleY: ratio}, 200)
+          .wait(500)
+          .to({rotation: 90}, 200)
+          .wait(500)
+          .to({rotation: 2250}, 60000);
+
+      var txt_ios = new createjs.Text("iOS 下载", "40px Arial", "#FFFFFF");
+      txt_ios.scaleX = ratio * 0.7;
+      txt_ios.scaleY = ratio * 0.7;
+      txt_ios.regX = 80;
+      txt_ios.alpha = 0;
+      txt_ios.x = window.innerWidth * 0.5;
+      txt_ios.y = window.innerHeight * 0.7;
+      txt_ios.textBaseline = "alphabetic";
+      stage.addChild(txt_ios);
+      createjs.Tween.get(txt_ios)
+          .wait(3700)
+          .to({alpha: 1}, 200);
+
+      var txt_android = new createjs.Text("Android 下载", "40px Arial", "#FFFFFF");
+      txt_android.scaleX = ratio * 0.7;
+      txt_android.scaleY = ratio * 0.7;
+      txt_android.regX = 110;
+      txt_android.alpha = 0;
+      txt_android.x = window.innerWidth * 0.5;
+      txt_android.y = window.innerHeight * 0.78;
+      txt_android.textBaseline = "alphabetic";
+      stage.addChild(txt_android);
+      createjs.Tween.get(txt_android)
+          .wait(3700)
+          .to({alpha: 1}, 200);
+
+      var download_frame_1 = new createjs.Bitmap(queue.getResult("download_frame"));
+      download_frame_1.scaleX = ratio * 2;
+      download_frame_1.scaleY = ratio * 2;
+      download_frame_1.alpha = 0;
+      download_frame_1.regX = 73.5;
+      download_frame_1.regY = 23.5;
+      download_frame_1.x = window.innerWidth * 0.5;
+      download_frame_1.y = window.innerHeight * 0.693;
+      stage.addChild(download_frame_1);
+      createjs.Tween.get(download_frame_1)
+          .wait(3700)
+          .to({alpha: 1}, 200);
+
+      var download_frame_2 = new createjs.Bitmap(queue.getResult("download_frame"));
+      download_frame_2.scaleX = ratio * 2;
+      download_frame_2.scaleY = ratio * 2;
+      download_frame_2.alpha = 0;
+      download_frame_2.regX = 73.5;
+      download_frame_2.regY = 23.5;
+      download_frame_2.x = window.innerWidth * 0.5;
+      download_frame_2.y = window.innerHeight * 0.773;
+      stage.addChild(download_frame_2);
+      createjs.Tween.get(download_frame_2)
+          .wait(3700)
+          .to({alpha: 1}, 200);
+
+      var logo_bg = new createjs.Bitmap(queue.getResult("logo_bg"));
+      logo_bg.scaleX = ratio * 5;
+      logo_bg.scaleY = ratio * 5;
+      logo_bg.alpha = 0;
+      logo_bg.regX = 189;
+      logo_bg.regY = 189;
+      logo_bg.x = window.innerWidth * 0.5;
+      logo_bg.y = window.innerHeight * 0.382;
+      stage.addChild(logo_bg);
+      createjs.Tween.get(logo_bg)
+          .wait(3500)
+          .to({scaleX: ratio * 0.7, scaleY: ratio * 0.7, alpha: 1}, 100);
+
+      var logo_star = new createjs.Bitmap(queue.getResult("logo_star"));
+      logo_star.scaleX = ratio;
+      logo_star.scaleY = ratio ;
+      logo_star.alpha = 0.5;
+      logo_star.regX = 116;
+      logo_star.regY = 116;
+      logo_star.x = window.innerWidth * 0.5;
+      logo_star.y = window.innerHeight * 0.382;
+      stage.addChild(logo_star);
+      createjs.Tween.get(logo_star)
+          .to({alpha: 0})
+          .wait(3500);
+      createjs.Tween.get(logo_star,{loop:true})
+          .to({alpha: 1}, 1300)
+          .to({alpha: 0.5}, 1300);
+
+      var logo_x = new createjs.Bitmap(queue.getResult("logo_x"));
+      logo_x.scaleX = ratio * 5;
+      logo_x.scaleY = ratio * 5;
+      logo_x.alpha = 0;
+      logo_x.regX = 189;
+      logo_x.regY = 189;
+      logo_x.x = window.innerWidth * 0.5;
+      logo_x.y = window.innerHeight * 0.382;
+      stage.addChild(logo_x);
+      createjs.Tween.get(logo_x)
+          .wait(3500)
+          .to({scaleX: ratio * 0.7, scaleY: ratio * 0.7, alpha: 1}, 100);
+
+    }
+
+  </script>
+</head>
+
+<body onload="init()">
+
+<div id="loadBar01" class="loadBar">
+  <span class="percentNum">0%</span>
+</div>
+
+<div id="input" onclick="input()"></div>
+
+<div id="send" onclick="send()"></div>
+
+<div id="download" onclick="download()"></div>
+
+<canvas id="demo" height="100" width="100"></canvas>
+
+<div id="play" style="height: 73px; width: 121px;z-index: 100;position: absolute;right: 0px;top: 30px;display: none" >
+  <input id='btn_play' type="image" src = 'pics/musicon.png' onclick="playBGM()" width="100%" height="100%">
+</div>
+
+<div id="replay" style="height: 73px; width: 121px;z-index: 100;position: absolute;right: 100px;top: 30px;display: none" >
+  <input id='btn_replay' type="image" src = 'pics/replay.png' onclick="replay()" width="100%" height="100%">
+</div>
+
+<div id="skip" style="height: 73px; width: 121px;z-index: 100;position: absolute;right: 100px;top: 30px;display: none" >
+  <input id='btn_skip' type="image" src = 'pics/skip.png' onclick="skip()" width="100%" height="100%">
+</div>
+
+<!--birthday frame-->
+<div id='birthday' style="z-index: 1000; position: absolute; left: 60px; top: 160px; visibility: hidden">
+  <img src="pics/birthday_frame.png" style="position: absolute;left :0px;top: -20px;width:510px;height:100px">
+    <textarea id="ta_birthday" name="bd" readonly ="readonly" style="z-index: 1000;border:0;overflow: visible;
+    font-size: 38px;color: #FFFFFF;
+    background-color: transparent;
+    position: absolute; left: 80px; top: 5px;
+    "></textarea>
+</div>
+
+<!--content frame-->
+<div id='content' style="z-index: 1000; position: absolute; left: 120px; top: 200px; height:480px; width:400px; visibility: hidden;">
+  <img src="pics/content_frame.png" style="position: absolute;left:-50px;top: -50px;width:500px; height:500px">
+  <div id="wrapper" style="height: 400px; width: 400px; overflow: hidden;position:relative;">
+    <div id="ta_content" style="line-height: 40px;font-size: 24px;color:#FFFFFF; position: absolute; left:0px; top:0px;
+      "></div>
+  </div>
+</div>
+
+<!--date picker-->
+<div id='datepicker' style="z-index: 1000;position: absolute;left: 50px;top: 25%;visibility: hidden">
+
+  <img src="pics/year_frame.png" style="position: absolute;left:-16px;top: -35px;width:240px;">
+  <img src="pics/month_frame.png" style="position: absolute;left:348px;top: -35px;width:200px;">
+  <img src="pics/date_frame.png" style="position: absolute;left:202px;top: -35px;width:160px;">
+
+  <div class="date-wrapper">
+    <form name="date">
+      <select class="date" id="fullYear" name="fullYear">
+        <option value="1900">1900</option>
+        <option value="1901">1901</option>
+        <option value="1902">1902</option>
+        <option value="1903">1903</option>
+        <option value="1904">1904</option>
+        <option value="1905">1905</option>
+        <option value="1906">1906</option>
+        <option value="1907">1907</option>
+        <option value="1908">1908</option>
+        <option value="1909">1909</option>
+        <option value="1910">1910</option>
+        <option value="1911">1911</option>
+        <option value="1912">1912</option>
+        <option value="1913">1913</option>
+        <option value="1914">1914</option>
+        <option value="1915">1915</option>
+        <option value="1916">1916</option>
+        <option value="1917">1917</option>
+        <option value="1918">1918</option>
+        <option value="1919">1919</option>
+        <option value="1920">1920</option>
+        <option value="1921">1921</option>
+        <option value="1922">1922</option>
+        <option value="1923">1923</option>
+        <option value="1924">1924</option>
+        <option value="1925">1925</option>
+        <option value="1926">1926</option>
+        <option value="1927">1927</option>
+        <option value="1928">1928</option>
+        <option value="1929">1929</option>
+        <option value="1930">1930</option>
+        <option value="1931">1931</option>
+        <option value="1932">1932</option>
+        <option value="1933">1933</option>
+        <option value="1934">1934</option>
+        <option value="1935">1935</option>
+        <option value="1936">1936</option>
+        <option value="1937">1937</option>
+        <option value="1938">1938</option>
+        <option value="1939">1939</option>
+        <option value="1940">1940</option>
+        <option value="1941">1941</option>
+        <option value="1942">1942</option>
+        <option value="1943">1943</option>
+        <option value="1944">1944</option>
+        <option value="1945">1945</option>
+        <option value="1946">1946</option>
+        <option value="1947">1947</option>
+        <option value="1948">1948</option>
+        <option value="1949">1949</option>
+        <option value="1950">1950</option>
+        <option value="1951">1951</option>
+        <option value="1952">1952</option>
+        <option value="1953">1953</option>
+        <option value="1954">1954</option>
+        <option value="1955">1955</option>
+        <option value="1956">1956</option>
+        <option value="1957">1957</option>
+        <option value="1958">1958</option>
+        <option value="1959">1959</option>
+        <option value="1960">1960</option>
+        <option value="1961">1961</option>
+        <option value="1962">1962</option>
+        <option value="1963">1963</option>
+        <option value="1964">1964</option>
+        <option value="1965">1965</option>
+        <option value="1966">1966</option>
+        <option value="1967">1967</option>
+        <option value="1968">1968</option>
+        <option value="1969">1969</option>
+        <option value="1970">1970</option>
+        <option value="1971">1971</option>
+        <option value="1972">1972</option>
+        <option value="1973">1973</option>
+        <option value="1974">1974</option>
+        <option value="1975">1975</option>
+        <option value="1976">1976</option>
+        <option value="1977">1977</option>
+        <option value="1978">1978</option>
+        <option value="1979">1979</option>
+        <option value="1980">1980</option>
+        <option selected value="1980">年</option>
+        <option value="1981">1981</option>
+        <option value="1982">1982</option>
+        <option value="1983">1983</option>
+        <option value="1984">1984</option>
+        <option value="1985">1985</option>
+        <option value="1986">1986</option>
+        <option value="1987">1987</option>
+        <option value="1988">1988</option>
+        <option value="1989">1989</option>
+        <option value="1990">1990</option>
+        <option value="1991">1991</option>
+        <option value="1992">1992</option>
+        <option value="1993">1993</option>
+        <option value="1994">1994</option>
+        <option value="1995">1995</option>
+        <option value="1996">1996</option>
+        <option value="1997">1997</option>
+        <option value="1998">1998</option>
+        <option value="1999">1999</option>
+        <option value="2000">2000</option>
+        <option value="2001">2001</option>
+        <option value="2002">2002</option>
+        <option value="2003">2003</option>
+        <option value="2004">2004</option>
+        <option value="2005">2005</option>
+        <option value="2006">2006</option>
+        <option value="2007">2007</option>
+        <option value="2008">2008</option>
+        <option value="2009">2009</option>
+        <option value="2010">2010</option>
+        <option value="2011">2011</option>
+        <option value="2012">2012</option>
+        <option value="2013">2013</option>
+        <option value="2014">2014</option>
+      </select>
+      <select class="date" id="month" name="month">
+        <option value="07">7</option>
+        <option value="08">8</option>
+        <option value="09">9</option>
+        <option value="10">10</option>
+        <option value="11">11</option>
+        <option value="12">12</option>
+        <option value="01">1</option>
+        <option value="02">2</option>
+        <option value="03">3</option>
+        <option value="04">4</option>
+        <option value="05">5</option>
+        <option value="06">6</option>
+        <option value="07">7</option>
+        <option selected value="07">月</option>
+        <option value="08">8</option>
+        <option value="09">9</option>
+        <option value="10">10</option>
+        <option value="11">11</option>
+        <option value="12">12</option>
+        <option value="01">1</option>
+        <option value="02">2</option>
+        <option value="03">3</option>
+        <option value="04">4</option>
+        <option value="05">5</option>
+        <option value="06">6</option>
+      </select>
+      <select class="date" id="date" name="date">
+        <option value="01">1</option>
+        <option value="02">2</option>
+        <option value="03">3</option>
+        <option value="04">4</option>
+        <option value="05">5</option>
+        <option value="06">6</option>
+        <option value="07">7</option>
+        <option value="08">8</option>
+        <option value="09">9</option>
+        <option value="10">10</option>
+        <option value="11">11</option>
+        <option value="12">12</option>
+        <option value="13">13</option>
+        <option value="14">14</option>
+        <option value="15">15</option>
+        <option selected value="15">日</option>
+        <option value="16">16</option>
+        <option value="17">17</option>
+        <option value="18">18</option>
+        <option value="19">19</option>
+        <option value="20">20</option>
+        <option value="21">21</option>
+        <option value="22">22</option>
+        <option value="23">23</option>
+        <option value="24">24</option>
+        <option value="25">25</option>
+        <option value="26">26</option>
+        <option value="27">27</option>
+        <option value="28">28</option>
+        <option value="29">29</option>
+        <option value="30">30</option>
+        <option value="31">31</option>
+      </select>
+    </form>
+  </div>
+</div>
+
+</body>
+</html>

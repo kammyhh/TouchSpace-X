@@ -1,8 +1,105 @@
-body {
-  padding: 50px;
-  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+canvas {
+    display: block;
+}
+#input {
+    display: none;
+    position: absolute;
+    top: 83%;
+    left: 25%;
+    width: 50%;
+    height: 10%;
+    padding: 0;
+    border: 0;
+    z-index:1000;
+    overflow: auto;
+}
+#send {
+    display: none;
+    position: absolute;
+    top: 83%;
+    left: 25%;
+    width: 50%;
+    height: 10%;
+    padding: 0px;
+    border: 0px;
+    z-index:1000;
+    overflow: auto;
+}
+#download {
+    display: none;
+    position: absolute;
+    top: 83%;
+    left: 25%;
+    width: 50%;
+    height: 10%;
+    padding: 0px;
+    border: 0px;
+    z-index:1000;
+    overflow: auto;
+}
+div.drum-wrapper {
+    float: left;
+}
+div.drum {
+    transition-duration: 0.2s;
+    -webkit-transition-duration: 0.2s;
+}
+div.drum figure {
+    margin-left: 40px;
+    text-align: left;
+}
+#drum_fullYear {
+    margin-left: 10px;
+    width: 200px;
+}
+#drum_month {
+    margin-left: 10px;
+    width: 160px;
+}
+#drum_date {
+    width: 100px;
+}
+div.date-wrapper {
+    width: 600px;
+}
+div.date-wrapper form {
+    position: relative;
+}
+#wrapper {
+    position:relative;
+    z-index:1;
+    height:200px;
+    overflow:hidden;
+}
+#ta_content {
+    width: 400px;
+    height: 800px;
 }
 
-a {
-  color: #00B7FF;
+#content
+{
+    margin: 120px auto;
+    width: 80%;
+}
+
+.loadBar
+{
+    display: none;
+    width: 30%;
+    left: 35%;
+    height: 10%;
+    top: 33.2%;
+    position: absolute;
+}
+
+.loadBar .percentNum
+{
+    text-align: center;
+    font-size: 40px;
+    position: absolute;
+    top: calc(50% - 18px);
+    height: 0%;
+    width: 100%;
+    color: #fff;
+
 }

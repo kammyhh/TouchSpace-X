@@ -4,7 +4,9 @@
 var mongoose = require('./mongoose.js');
 var matchSchema = new mongoose.Schema({
   begin: String,
-  end: String
+  end: String,
+  value: Number,
+  status: Number
 }, {
   collection: 'Matchs'
 });
@@ -12,22 +14,18 @@ var matchSchema = new mongoose.Schema({
 var matchModel = mongoose.model('Match', matchSchema);
 
 function Match(match) {
-  this.matchname = match.matchname;
-  this.password = match.password;
-  this.detail = match.detail;
-  this.energy = match.energy;
-  this.constellation = match.constellation;
-  this.tags = match.tags;
+  this.begin = match.begin;
+  this.end = match.end;
+  this.value = match.value;
+  this.status = match.status;
 }
 
 Match.prototype.save = function(callback) {
   var match = {
-    matchname: this.matchname,
-    password: this.password,
-    detail: this.detail,
-    energy: this.energy,
-    constellation: this.constellation,
-    tags: this. tags
+    begin: this.begin,
+    end: this.end,
+    value: this.value,
+    status: this.status
   };
 
   var newMatch = new matchModel(match);
