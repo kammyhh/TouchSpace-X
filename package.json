@@ -19,6 +19,7 @@
     "mongoose":"*",
     "node-xlsx":"*",
     "connect-multiparty":"*",
-    "async":"*"
+    "async":"*",
+    "apn":"*"
   }
 }

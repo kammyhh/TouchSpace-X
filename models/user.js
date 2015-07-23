@@ -16,23 +16,22 @@ var userSchema = new mongoose.Schema({
     phone: String,
     email: String,
     avatar: String,
-    life_card: {
-      type: String,
-      ref: 'Deck'
-    },
+    life_card: String,
     guard_card: String,
     energy: Number,
     constellation: String,
     tags: String,
     flag: Number
   },
+  purchased_music: Array,
   contact: Array,
   last_login: {
     ip: String,
     x: Number,
     y: Number,
     z: Number,
-    time: {type: Date, default: Date.now()}
+    time: {type: Date, default: Date.now()},
+    device: String
   }
 }, {
   collection: 'Users'
@@ -45,6 +44,7 @@ function User(user) {
   this.password = user.password;
   this.token = user.token;
   this.detail = user.detail;
+  this.purchased_music = user.purchased_music;
   this.contact = user.contact;
   this.last_login = user.last_login;
 }
@@ -55,6 +55,7 @@ User.prototype.save = function(callback) {
     password: this.password,
     token: this.token,
     detail: this.detail,
+    purchased_music: this.purchased_music,
     contact: this.contact,
     last_login: this.last_login
   };
@@ -96,9 +97,9 @@ User.login = function(username, password, callback) {
   })
 };
 
-User.setLogin = function(userId, token, ip, callback) {
-  userModel.update({_id: userId}, {token: token, 'last_login.ip': ip,
-    'last_login.time': Date.now()}, function(err, user) {
+User.setLogin = function(userId, token, ip, device_token, callback) {
+  userModel.update({_id: userId}, {token: token, 'last_login.ip': ip, 'last_login.time': Date.now(),
+    'last_login.device': device_token}, function(err, user) {
     if (err) {
       return callback(err);
     }
@@ -212,7 +213,7 @@ User.get_all = function(callback){
             contact: user['contact'],
             detail: user['detail'],
             deck: deck['cards']
-          }
+          };
           results.push(result);
           callback(results)
         })

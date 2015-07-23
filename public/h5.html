@@ -29,8 +29,7 @@
   </style>
   <script>
 
-    function LoadingBar(id)
-    {
+    function LoadingBar(id) {
       this.loadbar = $("#" + id);
       this.percentEle = $(".percent", this.loadbar);
       this.percentNumEle = $(".percentNum", this.loadbar);
@@ -61,6 +60,9 @@
     img1.src = "pics/circle1.png";
     img2 = new Image();
     img2.src = "pics/circle2.png";
+    ear = new Image();
+    ear.src = "pics/earphone.png";
+
 
 //    preload
     var queue = new createjs.LoadQueue();
@@ -276,13 +278,34 @@
       createjs.Tween.get(circle2, {loop:true})
           .to({rotation: 360}, loading_time);
 
+      var earphone = new createjs.Bitmap(ear);
+      earphone.scaleX = ratio * 1.8;
+      earphone.scaleY = ratio * 2.0;
+      earphone.regX = 100.5;
+      earphone.regY = 100.5;
+      earphone.alpha = 1;
+      earphone.x = window.innerWidth * 0.5;
+      earphone.y = window.innerHeight * 0.382;
+      stage.addChild(earphone);
+
+      var txt_loading = new createjs.Text("戴 上 耳 机 效 果 更 好", "30px Arail", "#FFFFFF");
+      txt_loading.scaleX = ratio;
+      txt_loading.scaleY = ratio;
+      txt_loading.regX = 150;
+      txt_loading.regY = -10;
+      txt_loading.alpha = 1;
+      txt_loading.x = window.innerWidth * 0.5;
+      txt_loading.y = window.innerHeight * 0.8;
+      txt_loading.textBaseline = "alphabetic";
+      stage.addChild(txt_loading);
+
     }
 
     function subtitle() {
 
       document.getElementById('skip').style.display = 'block';
 
-      var txt_line1 = new createjs.Text("人们之间的联系千丝万缕，", "30px Arial", "#FFFFFF");
+      var txt_line1 = new createjs.Text("人们之间的联系千丝万缕，", "30px Arail", "#FFFFFF");
       txt_line1.scaleX = ratio;
       txt_line1.scaleY = ratio;
       txt_line1.alpha = 0;
@@ -305,7 +328,7 @@
           .wait(text_fade_time)
           .to({alpha: 0}, text_fade_time * 0.25);
 
-      var txt_line2 = new createjs.Text("并且不受时间空间的限制，", "30px Arial", "#FFFFFF");
+      var txt_line2 = new createjs.Text("并且不受时间空间的限制，", "30px Arail", "#FFFFFF");
       txt_line2.scaleX = ratio;
       txt_line2.scaleY = ratio;
       txt_line2.alpha = 0;
@@ -328,7 +351,7 @@
           .wait(text_fade_time)
           .to({alpha: 0}, text_fade_time * 0.25);
 
-      var txt_line3 = new createjs.Text("尽管我们创造了所有的通讯技术，", "30px Arial", "#FFFFFF");
+      var txt_line3 = new createjs.Text("尽管我们创造了所有的通讯技术，", "30px Arail", "#FFFFFF");
       txt_line3.scaleX = ratio;
       txt_line3.scaleY = ratio;
       txt_line3.alpha = 0;
@@ -349,7 +372,7 @@
           .wait(text_fade_time)
           .to({alpha: 0}, text_fade_time * 0.25);
 
-      var txt_line4 = new createjs.Text("但是没有比人类的心灵感知更厉害的发明！", "30px Arial", "#FFFFFF");
+      var txt_line4 = new createjs.Text("但是没有比人类的心灵感知更厉害的发明！", "30px Arail", "#FFFFFF");
       txt_line4.scaleX = ratio;
       txt_line4.scaleY = ratio;
       txt_line4.alpha = 0;
@@ -371,7 +394,7 @@
 
     function relation() {
 
-      var txt_6du_down = new createjs.Text("世界这么大，你与任何一个人中间究竟隔几层", "30px Arial", "#FFFFFF");
+      var txt_6du_down = new createjs.Text("世界这么大，你与任何一个人中间究竟隔几层", "30px Arail", "#FFFFFF");
       txt_6du_down.scaleX = ratio;
       txt_6du_down.scaleY = ratio;
       txt_6du_down.alpha = 0;
@@ -458,7 +481,7 @@
           .wait(8200)
           .to({alpha: 0, scaleX: 0, scaleY: 0}, 200);
 
-      var txt_you = new createjs.Text("你", "60px Arial", "#FFFFFF");
+      var txt_you = new createjs.Text("你", "60px Arail", "#FFFFFF");
       txt_you.scaleX = ratio;
       txt_you.scaleY = ratio;
       txt_you.regX = 32;
@@ -1159,7 +1182,7 @@
       txt_subtitle.regX = 185;
       txt_subtitle.x = window.innerWidth * 0.5;
       txt_subtitle.y = window.innerHeight * 0.9;
-      txt_subtitle.font = "30px Arial";
+      txt_subtitle.font = "30px Arail";
       txt_subtitle.color = "#FFFFFF";
       txt_subtitle.lineHeight = 50;
       txt_subtitle.textBaseline = "alphabetic";
@@ -2114,7 +2137,7 @@
       createjs.Tween.get(birthday)
           .to({alpha: 1}, 800);
 
-      var txt_birthday = new createjs.Text("输入生日", "30px Arial", "#FFFFFF");
+      var txt_birthday = new createjs.Text("输入生日", "30px Arail", "#FFFFFF");
       txt_birthday.scaleX = ratio * 1;
       txt_birthday.scaleY = ratio * 1;
       txt_birthday.regX = 60;
@@ -2664,7 +2687,7 @@
           createjs.Tween.get(send)
               .to({alpha: 1}, 800);
 
-          var txt_send = new createjs.Text("确  认", "30px Arial", "#FFFFFF");
+          var txt_send = new createjs.Text("确  认", "30px Arail", "#FFFFFF");
           txt_send.scaleX = ratio * 1;
           txt_send.scaleY = ratio * 1;
           txt_send.regX = 43;
@@ -2730,7 +2753,7 @@
           createjs.Tween.get(download)
               .to({alpha: 1}, 800);
 
-          var txt_download = new createjs.Text("OK", "30px Arial", "#FFFFFF");
+          var txt_download = new createjs.Text("OK", "30px Arail", "#FFFFFF");
           txt_download.scaleX = ratio * 1;
           txt_download.scaleY = ratio * 1;
           txt_download.regX = 30;
@@ -2761,7 +2784,7 @@
       document.getElementById("birthday").style.visibility = "hidden";
       document.getElementById("download").style.display = "none";
 
-      var txt_who_am_i = new createjs.Text("我是谁", "40px Arial", "#FFFFFF");
+      var txt_who_am_i = new createjs.Text("我是谁", "40px Arail", "#FFFFFF");
       txt_who_am_i.scaleX = ratio;
       txt_who_am_i.scaleY = ratio;
       txt_who_am_i.regX = 60;
@@ -2776,7 +2799,7 @@
           .wait(1000)
           .to({scaleX: ratio * 0.8, scaleY: ratio * 0.8, y: window.innerHeight * 0.12}, 200);
 
-      var txt_i_am = new createjs.Text("我是触摸未来", "40px Arial", "#FFFFFF");
+      var txt_i_am = new createjs.Text("我是触摸未来", "40px Arail", "#FFFFFF");
       txt_i_am.scaleX = 0;
       txt_i_am.scaleY = 0;
       txt_i_am.regX = 120;
@@ -2789,7 +2812,7 @@
           .wait(1700)
           .to({scaleX: ratio, scaleY: ratio, alpha: 1}, 300);
 
-      var txt_team = new createjs.Text("TS-X 团队", "40px Arial", "#FFFFFF");
+      var txt_team = new createjs.Text("TS-X 团队", "40px Arail", "#FFFFFF");
       txt_team.scaleX = ratio * 0.5;
       txt_team.scaleY = ratio * 0.5;
       txt_team.regX = 90;
@@ -2836,7 +2859,7 @@
           .wait(500)
           .to({rotation: 2250}, 60000);
 
-      var txt_ios = new createjs.Text("iOS 下载", "40px Arial", "#FFFFFF");
+      var txt_ios = new createjs.Text("iOS 下载", "40px Arail", "#FFFFFF");
       txt_ios.scaleX = ratio * 0.7;
       txt_ios.scaleY = ratio * 0.7;
       txt_ios.regX = 80;
@@ -2849,7 +2872,7 @@
           .wait(3700)
           .to({alpha: 1}, 200);
 
-      var txt_android = new createjs.Text("Android 下载", "40px Arial", "#FFFFFF");
+      var txt_android = new createjs.Text("Android 下载", "40px Arail", "#FFFFFF");
       txt_android.scaleX = ratio * 0.7;
       txt_android.scaleY = ratio * 0.7;
       txt_android.regX = 110;

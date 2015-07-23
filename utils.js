@@ -2,10 +2,11 @@
  * Created by hh on 15/6/29.
  */
 
+var apn = require('apn');
+var async = require('async');
 var crypto = require('crypto');
 var fs= require('fs');
 var xlsx = require('node-xlsx');
-var async = require('async');
 
 var Characteristic = require('./models/characteristic.js');
 var Constellation = require('./models/constellation.js');
@@ -258,9 +259,29 @@ var random_array = function(arr) {
   return rand_arr;
 };
 
+var sleep = function(sleepTime) {
+  for(var start = +new Date; +new Date - start <= sleepTime; ) { }
+};
+
+var apple_push = function(device, content) {
+  var token = device; //长度为64的设备Token
+  var options = {"gateway": "gateway.sandbox.push.apple.com"};
+  var apnConnection = new apn.Connection(options),
+    device = new apn.Device(token),
+    note = new apn.Notification();
+  note.expiry = Math.floor(Date.now() / 1000) + 60;
+  note.badge = 1;
+  note.sound = "ping.aiff";
+  note.alert = {
+    t: "ttt",
+    body: content
+  };
+  note.payload = {'messageFrom': '123'};
+  apnConnection.pushNotification(note, device);
+};
+
 exports.test = function(req, res) {
-  var arr = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-  res.send(random_array(arr))
+  res.send('sent');
 };
 
 exports.findMatch = function(req, res) {
@@ -279,22 +300,25 @@ exports.findMatch = function(req, res) {
         }
       }
       matches[i] = {
-        begin: results[begin]['detail']['phone'],
-        end: results[end]['detail']['phone'],
+        begin: results[begin]['last_login']['device'],
+        end: results[end]['last_login']['device'],
         value: max,
         status: 0
       };
-      console.log(matches[i]);
 
       var newMatch = new Match({
-        begin: results[begin]['detail']['phone'],
-        end: results[end]['detail']['phone'],
+        begin: results[begin]['last_login']['device'],
+        end: results[end]['last_login']['device'],
         value: max,
         status: 0
       });
       newMatch.save(function (err, match) {
-        console.log(match);
+
       });
+
+      apple_push(results[begin]['last_login']['device'], 'begin: '+Date.now().toString());
+      apple_push(results[end]['last_login']['device'], 'end: '+Date.now().toString());
+
       results = results.slice(0, end).concat(results.slice(end + 1));
       results = results.slice(1);
     }
@@ -309,6 +333,7 @@ exports.findMatch = function(req, res) {
 exports.login = function(req, res) {
   var username = req.header('username'),
     password = req.header('password'),
+    device_token = req.header('device_token'),
     ip = req['_remoteAddress'].split(':').pop();
   User.login(username, password, function (err, user) {
     if (err) throw err;
@@ -316,7 +341,7 @@ exports.login = function(req, res) {
       var userId = user['_id'],
         plaintext = user['username'] + Date.now(),
         token = crypto.createHash('md5').update(plaintext).digest('hex');
-      User.setLogin(userId, token, ip, function () {
+      User.setLogin(userId, token, ip, device_token, function () {
         if (err) throw err;
         var response = {
           status: 'OK',
@@ -749,29 +774,41 @@ exports.constellationInfo = function(req, res) {
   })
 };
 
-exports.receiveMessage = function(req, res) {
+exports.sendMessage = function(req, res) {
   var userId = req.header('userId'),
     token = req.header('token');
   User.auth(userId, token, function (err, user) {
-    if (err) throw err;
     if (user != null) {
-      var username = user['username'];
-      Message.receive(username, function (err, record) {
+      var username = user['username'],
+        constellation = user['detail']['constellation'],
+        to = req.body.to,
+        msg = req.body.msg;
+      var message = {
+        from: {
+          username: username,
+          constellation: constellation
+        },
+        to: to,
+        message: msg,
+        isRead: 0,
+        date: Date.now()
+      };
+      new Message(message).save(function (err, record) {
         console.log(record);
-        var response = {
-          status: 'OK',
-          data: record
-        };
-        res.send(response)
-      })
-    } else {
+      });
       var response = {
+        status: 'OK',
+        data: {}
+      };
+      res.send(response)
+    } else {
+      response = {
         status: 'Token error',
         data: {}
       };
       res.send(response)
     }
-  })
+  });
 };
 
 exports.receiveMessage = function(req, res) {
