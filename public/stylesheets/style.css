@@ -13,6 +13,18 @@ canvas {
     z-index:1000;
     overflow: auto;
 }
+#back {
+    display: none;
+    position: absolute;
+    top: 73%;
+    left: 25%;
+    width: 50%;
+    height: 10%;
+    padding: 0;
+    border: 0;
+    z-index:1000;
+    overflow: auto;
+}
 #send {
     display: none;
     position: absolute;
@@ -94,12 +106,13 @@ div.date-wrapper form {
 
 .loadBar .percentNum
 {
-    text-align: center;
+    height:100px;
+    display:block;
+    margin:1px 1px;
+    text-align:center;
+    line-height:100px;
+
     font-size: 40px;
-    position: absolute;
-    top: calc(50% - 18px);
-    height: 0%;
-    width: 100%;
     color: #fff;
 
 }

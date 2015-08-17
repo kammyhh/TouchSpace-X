@@ -20,7 +20,7 @@
   <title>h5</title>
   <style>
     html, body {
-      background: url(pics/bg.jpg);
+      background: url(pics/bg.png);
       width:  100%;
       height: 100%;
       margin: 0;
@@ -31,7 +31,6 @@
 
     function LoadingBar(id) {
       this.loadbar = $("#" + id);
-      this.percentEle = $(".percent", this.loadbar);
       this.percentNumEle = $(".percentNum", this.loadbar);
       this.max = 100;
       this.currentProgress = 0;
@@ -49,7 +48,6 @@
           val = this.max;
         }
         this.currentProgress = parseInt((val / this.max) * 100) + "%";
-        this.percentEle.width(this.currentProgress);
         this.percentNumEle.text(this.currentProgress);
       }
     };
@@ -63,12 +61,33 @@
     ear = new Image();
     ear.src = "pics/earphone.png";
 
+    img_bg_cover = new Image();
+    img_bg_cover.src = "pics/bg_cover.png";
+    img_bg_earth = new Image();
+    img_bg_earth.src = "pics/bg_earth.png";
+    img_bg_earth_2 = new Image();
+    img_bg_earth_2.src = "pics/bg_earth_2.png";
+    img_bg_orbit = new Image();
+    img_bg_orbit.src = "pics/bg_orbit.png";
+    img_bg_pluto = new Image();
+    img_bg_pluto.src = "pics/bg_pluto.png";
+    img_bg_star = new Image();
+    img_bg_star.src = "pics/bg_star.png";
+    img_bg_sun = new Image();
+    img_bg_sun.src = "pics/bg_sun.png";
 
 //    preload
     var queue = new createjs.LoadQueue();
     queue.on("complete", handleComplete, this);
     queue.on("progress", handleProgress, this);
     queue.loadManifest([
+      {id: "bg_cover", src:"pics/bg_cover.png"},
+      {id: "bg_earth", src:"pics/bg_earth.png"},
+      {id: "bg_earth_2", src:"pics/bg_earth_2.png"},
+      {id: "bg_orbit", src:"pics/bg_orbit.png"},
+      {id: "bg_pluto", src:"pics/bg_pluto.png"},
+      {id: "bg_star", src:"pics/bg_star.png"},
+      {id: "bg_sun", src:"pics/bg_sun.png"},
       {id: "circle1", src:"pics/circle1.png"},
       {id: "circle2", src:"pics/circle2.png"},
       {id: "1992", src:"pics/1992.png"},
@@ -112,6 +131,8 @@
       {id: "TXL_4", src:"pics/TXL_4.png"}
     ]);
     function handleComplete() {
+      stage.removeAllChildren();
+      background();
       setTimeout("document.getElementById('loadBar01').style.display = 'none';play()", 500);
     }
     function handleProgress() {
@@ -137,7 +158,7 @@
 
 //    init
     var oriWidth = 640, oriHeight = 1136;
-    var ratio1, ratio2, ratio;
+    var ratio1, ratio2, ratio, ratio_2;
     var canvas, stage;
     var l, s, r, a, b, d, birthday_sto, input_sto, send_sto;
 
@@ -210,10 +231,13 @@
         canvas.height = window.innerHeight;
         ratio1 = canvas.width / oriWidth;
         ratio2 = canvas.height / oriHeight;
+
         if (ratio1 < ratio2){
           ratio = ratio1;
+          ratio_2 = ratio2;
         } else {
           ratio = ratio2;
+          ratio_2 = ratio1;
         }
       }
       resizeCanvas();
@@ -230,8 +254,12 @@
       document.getElementById("input").style.display = "none";
       document.getElementById("send").style.display = "none";
       document.getElementById("download").style.display = "none";
+      document.getElementById("back").style.display = "none";
 
-      stage.removeAllChildren();
+//      stage.removeAllChildren();
+      for (var i = stage.children.length - 1; i > 6; i--) {
+        stage.removeChild(stage.children[i]);
+      }
       clearTimeout(l);
       clearTimeout(s);
       clearTimeout(r);
@@ -241,6 +269,120 @@
       clearTimeout(birthday_sto);
       clearTimeout(input_sto);
       clearTimeout(send_sto);
+    }
+
+    function background() {
+
+      var bg_star = new createjs.Bitmap(img_bg_star);
+      bg_star.scaleX = ratio_2 * 0.6;
+      bg_star.scaleY = ratio_2 * 0.6;
+      bg_star.regX = 540;
+      bg_star.regY = 960;
+      bg_star.alpha = 0;
+      bg_star.x = window.innerWidth * 0.5;
+      bg_star.y = window.innerHeight * 0.5;
+      stage.addChild(bg_star);
+      createjs.Tween.get(bg_star)
+          .to({alpha: 1}, 1000);
+
+      var bg_orbit = new createjs.Bitmap(img_bg_orbit);
+      bg_orbit.scaleX = ratio * ratio1 / ratio2 * 0.6;
+      bg_orbit.scaleY = ratio * 0.59;
+      bg_orbit.regX = 540;
+      bg_orbit.regY = 960;
+      bg_orbit.alpha = 0;
+      bg_orbit.x = window.innerWidth * 0.5;
+      bg_orbit.y = window.innerHeight * 0.5;
+      stage.addChild(bg_orbit);
+      createjs.Tween.get(bg_orbit)
+          .to({alpha: 1}, 1000);
+
+      var bg_pluto = new createjs.Bitmap(img_bg_pluto);
+      bg_pluto.scaleX = ratio_2 * 0.31;
+      bg_pluto.scaleY = ratio_2 * 0.32;
+      bg_pluto.regX = 100;
+      bg_pluto.regY = 103.5;
+      bg_pluto.alpha = 0;
+      bg_pluto.x = window.innerWidth * 0.1;
+      bg_pluto.y = window.innerHeight * 0.53;
+      stage.addChild(bg_pluto);
+      createjs.Tween.get(bg_pluto, {loop: true})
+          .to({alpha: 1}, 1000)
+          .to({guide:{path:[
+            window.innerWidth * 0.10, window.innerHeight * 0.53,
+            window.innerWidth * 1.10, window.innerHeight * 0.65,
+            window.innerWidth * 1.10, window.innerHeight * 0.57]}},100000)
+          .to(window.innerWidth * 1.10, window.innerHeight * 0.35)
+          .to({guide:{path:[
+            window.innerWidth * 1.10, window.innerHeight * 0.35,
+            window.innerWidth * 1.00, window.innerHeight * 0.27,
+            window.innerWidth * 0.10, window.innerHeight * 0.39]}},100000)
+          .to({guide:{path:[
+            window.innerWidth * 0.10, window.innerHeight * 0.39,
+            window.innerWidth * -0.20, window.innerHeight * 0.44,
+            window.innerWidth * 0.10, window.innerHeight * 0.53]}},50000);
+
+      var bg_earth = new createjs.Bitmap(img_bg_earth);
+      bg_earth.scaleX = ratio1 * ratio2 * 0.35;
+      bg_earth.scaleY = ratio1 * ratio2 * 0.35;
+      bg_earth.regX = 112.5;
+      bg_earth.regY = 111.5;
+      bg_earth.alpha = 0;
+      bg_earth.x = window.innerWidth * 0.6;
+      bg_earth.y = window.innerHeight * 0.38;
+      stage.addChild(bg_earth);
+      createjs.Tween.get(bg_earth, {loop: true})
+          .to({alpha: 1}, 1000)
+          .to({guide:{path:[
+            window.innerWidth * 0.60, window.innerHeight * 0.38,
+            window.innerWidth * 0.15, window.innerHeight * 0.44,
+            window.innerWidth * 0.60, window.innerHeight * 0.50]}},20000)
+          .to({guide:{path:[
+            window.innerWidth * 0.60, window.innerHeight * 0.50,
+            window.innerWidth * 1.10, window.innerHeight * 0.55,
+            window.innerWidth * 1.10, window.innerHeight * 0.51]}},20000)
+          .to(window.innerWidth * 1.10, window.innerHeight * 0.39)
+          .to({guide:{path:[
+            window.innerWidth * 1.10, window.innerHeight * 0.39,
+            window.innerWidth * 1.00, window.innerHeight * 0.33,
+            window.innerWidth * 0.60, window.innerHeight * 0.38]}},20000);
+
+      var bg_sun = new createjs.Bitmap(img_bg_sun);
+      bg_sun.scaleX = ratio_2 * ratio2 * 0.6;
+      bg_sun.scaleY = ratio_2 * ratio2 * 0.6;
+      bg_sun.regX = 1080;
+      bg_sun.regY = 960;
+      bg_sun.alpha = 0;
+      bg_sun.x = window.innerWidth;
+      bg_sun.y = window.innerHeight * 0.5;
+      stage.addChild(bg_sun);
+      createjs.Tween.get(bg_sun)
+          .to({alpha: 1}, 1000);
+
+
+      var bg_earth_2 = new createjs.Bitmap(img_bg_earth_2);
+      bg_earth_2.scaleX = ratio_2 * 0.43;
+      bg_earth_2.scaleY = ratio_2 * 0.43;
+      bg_earth_2.regX = 139;
+      bg_earth_2.regY = 139;
+      bg_earth_2.alpha = 0;
+      bg_earth_2.x = window.innerWidth * 0.15;
+      bg_earth_2.y = window.innerHeight * 0.1;
+      stage.addChild(bg_earth_2);
+      createjs.Tween.get(bg_earth_2)
+          .to({alpha: 1}, 1000);
+
+      var bg_cover = new createjs.Bitmap(img_bg_cover);
+      bg_cover.scaleX = ratio_2 * 0.6;
+      bg_cover.scaleY = ratio_2 * 0.6;
+      bg_cover.regX = 540;
+      bg_cover.regY = 960;
+      bg_cover.alpha = 0;
+      bg_cover.x = window.innerWidth * 0.5;
+      bg_cover.y = window.innerHeight * 0.5;
+      stage.addChild(bg_cover);
+      createjs.Tween.get(bg_cover)
+          .to({alpha: 0.7}, 1000);
 
     }
 
@@ -250,6 +392,7 @@
       s = setTimeout('subtitle()', 0);
       r = setTimeout('relation()', subtitle_duration + 1000);
       a = setTimeout('animation()', subtitle_duration + relation_duration + 1000);
+//      a = setTimeout('animation()', 0);
 
     }
 
@@ -1181,7 +1324,7 @@
       txt_subtitle.alpha = 0;
       txt_subtitle.regX = 185;
       txt_subtitle.x = window.innerWidth * 0.5;
-      txt_subtitle.y = window.innerHeight * 0.9;
+      txt_subtitle.y = window.innerHeight * 0.6;
       txt_subtitle.font = "30px Arail";
       txt_subtitle.color = "#FFFFFF";
       txt_subtitle.lineHeight = 50;
@@ -2668,7 +2811,6 @@
     }
 
     function input() {
-
       if (document.getElementById("input").style.display == "block"){
 
         clearAll();
@@ -2740,6 +2882,7 @@
 
           document.getElementById("send").style.display = "none";
           document.getElementById("download").style.display = "block";
+          document.getElementById("back").style.display = "block";
 
           var download = new createjs.Bitmap(queue.getResult("birthday"));
           download.scaleX = ratio * 2.5;
@@ -2748,9 +2891,21 @@
           download.regX = 75;
           download.regY = 23.5;
           download.x = window.innerWidth * 0.5;
-          download.y = window.innerHeight * 0.88;
+          download.y = window.innerHeight * 0.78;
           stage.addChild(download);
           createjs.Tween.get(download)
+              .to({alpha: 1}, 800);
+
+          var back = new createjs.Bitmap(queue.getResult("birthday"));
+          back.scaleX = ratio * 2.5;
+          back.scaleY = ratio * 2.5;
+          back.alpha = 0;
+          back.regX = 75;
+          back.regY = 23.5;
+          back.x = window.innerWidth * 0.5;
+          back.y = window.innerHeight * 0.88;
+          stage.addChild(back);
+          createjs.Tween.get(back)
               .to({alpha: 1}, 800);
 
           var txt_download = new createjs.Text("OK", "30px Arail", "#FFFFFF");
@@ -2767,9 +2922,31 @@
               .to({alpha: 1}, 800)
               .to({alpha: 0.3}, 800);
 
+          var txt_back = new createjs.Text("BACK", "30px Arail", "#FFFFFF");
+          txt_back.scaleX = ratio * 1;
+          txt_back.scaleY = ratio * 1;
+          txt_back.regX = 45;
+          txt_back.regY = -10;
+          txt_back.alpha = 0.3;
+          txt_back.x = window.innerWidth * 0.5;
+          txt_back.y = window.innerHeight * 0.78;
+          txt_back.textBaseline = "alphabetic";
+          stage.addChild(txt_back);
+          createjs.Tween.get(txt_back, {loop: true})
+              .to({alpha: 1}, 800)
+              .to({alpha: 0.3}, 800);
 
         },2000);
       }
+
+    }
+
+    function back() {
+      clearAll();
+      document.getElementById("back").style.display ="none";
+      document.getElementById("download").style.display ="none";
+      document.getElementById("input").style.display = "block";
+      setTimeout('input()', 1000);
 
     }
 
@@ -2783,6 +2960,7 @@
       document.getElementById("content").style.visibility = "hidden";
       document.getElementById("birthday").style.visibility = "hidden";
       document.getElementById("download").style.display = "none";
+      document.getElementById("back").style.display = "none";
 
       var txt_who_am_i = new createjs.Text("我是谁", "40px Arail", "#FFFFFF");
       txt_who_am_i.scaleX = ratio;
@@ -2875,7 +3053,7 @@
       var txt_android = new createjs.Text("Android 下载", "40px Arail", "#FFFFFF");
       txt_android.scaleX = ratio * 0.7;
       txt_android.scaleY = ratio * 0.7;
-      txt_android.regX = 110;
+      txt_android.regX = 120;
       txt_android.alpha = 0;
       txt_android.x = window.innerWidth * 0.5;
       txt_android.y = window.innerHeight * 0.78;
@@ -2967,6 +3145,8 @@
 <div id="input" onclick="input()"></div>
 
 <div id="send" onclick="send()"></div>
+
+<div id="back" onclick="back()"></div>
 
 <div id="download" onclick="download()"></div>
 

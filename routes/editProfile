@@ -1,0 +1,35 @@
+
+  var userId = req.header('userId'),
+    token = req.header('token'),
+    nickname = req.body.nickname,
+    birthday = req.body.birthday,
+    gender = req.body.gender;
+
+55b9ed9c31e7c5d612544e37
+empty
+
+{
+  "status": "OK",
+  "data": {
+    "detail": {
+      "birthday": "1972-09-03T00:00:00.000Z",
+      "flag": 0,
+      "experience": 0,
+      "energy": 0,
+      "constellation": "处女座",
+      "guard_card": "K黑桃",
+      "life_card": "8方块",
+      "email": "te321st@b.com",
+      "phone": "110",
+      "gender": 0,
+      "nickname": "附近的空间"
+    }
+  }
+}
+
+or
+
+{
+  "status": "No chance to edit",
+  "data": {}
+}

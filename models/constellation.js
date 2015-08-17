@@ -4,6 +4,7 @@
 var mongoose = require('./mongoose.js');
 var constellationSchema = new mongoose.Schema({
   name: String,
+  intro: String,
   duration: String,
   content: String
 }, {
@@ -14,6 +15,7 @@ var constellationModel = mongoose.model('Constellation', constellationSchema);
 
 function Constellation(constellation) {
   this.name = constellation.name;
+  this.intro = constellation.intro;
   this.content = constellation.content;
   this.duration = constellation.duration;
 }
@@ -21,6 +23,7 @@ function Constellation(constellation) {
 Constellation.prototype.save = function(callback) {
   var constellation = {
     name: this.name,
+    intro: this.intro,
     duration: this.duration,
     content: this.content
   };

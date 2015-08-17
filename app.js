@@ -8,6 +8,7 @@ var multipart = require('connect-multiparty');
 
 var index = require('./routes/index');
 var api = require('./routes/api');
+var cron = require('./cron.js');
 
 var app = express();
 
@@ -58,6 +59,5 @@ app.use(function(err, req, res, next) {
     error: {}
   });
 });
-
 
 module.exports = app;

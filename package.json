@@ -20,6 +20,12 @@
     "node-xlsx":"*",
     "connect-multiparty":"*",
     "async":"*",
-    "apn":"*"
+    "apn":"*",
+    "pkg-config":"*",
+    "ccap":"*",
+    "wechat": "*",
+    "wechat-api": "*",
+    "log4js": "*",
+    "node-schedule": "*"
   }
 }

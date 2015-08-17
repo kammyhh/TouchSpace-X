@@ -1,0 +1,159 @@
+get  /allSix
+获取用户的所有六度链
+  var userId = req.header('userId'),
+    token = req.header('token');
+
+  55b8a6f372a00c3d053deaa3
+  eca7afbc1fd268a39ec13e08b9221a28
+
+  {
+    "status": "OK",
+    "data": {
+      "list": [
+        {
+          "sixId": "55b7e0e624aea16902ad6a7a",
+          "status": 1,
+          "chain": [
+            {
+              "time": "2015-07-28T20:07:02.880Z",
+              "device": "83c8a73120b97c206e025f6803c35214072cd397c5e7720b50e4fc6c89c36c89",
+              "userId": "55b8a6f372a00c3d053deaa3",
+              "position": 0
+            },
+            {
+              "position": 1,
+              "userId": "55b9ed9c31e7c5d612544e37",
+              "device": "83c8a73120b97c206e025f6803c35214072cd397c5e7720b50e4fc6c89c36c89",
+              "time": "2015-07-28T20:23:39.962Z"
+            },
+            {
+              "position": 2,
+              "userId": "55b8a9f4e26df18d05c486ae",
+              "device": "83c8a73120b97c206e025f6803c35214072cd397c5e7720b50e4fc6c89c36c89",
+              "time": "2015-07-28T20:24:25.383Z"
+            }
+          ]
+        }
+      ]
+    }
+  }
+------------------------------------------------------------------------------------------
+get  /pickSix
+获取可作为target的list(内定)
+  var userId = req.header('userId'),
+    token = req.header('token');
+
+  55b8a6f372a00c3d053deaa3
+  eca7afbc1fd268a39ec13e08b9221a28
+
+  {
+    "status": "OK",
+    "data": {
+      "list": [
+        "55b1a1e2b409cb5c1a783702",
+        "55991ed0e7b4533805e1c5a5"
+      ]
+    }
+  }
+------------------------------------------------------------------------------------------
+post /establishSix
+选取target后新建一个六度链
+  var userId = req.header('userId'),
+    token = req.header('token'),
+    targetId = req.header('targetId'),
+    context = req.body.context;
+
+  55b8a6f372a00c3d053deaa3
+  eca7afbc1fd268a39ec13e08b9221a28
+  55991ed0e7b4533805e1c5a5
+  jjjfdjkfkkdl
+
+  {
+    "status": "OK",
+    "data": {
+      "six": {
+        "__v": 0,
+        "establish": "55b8a6f372a00c3d053deaa3",
+        "target": "55991ed0e7b4533805e1c5a5",
+        "context": "jjjfdjkfkkdl",
+        "status": 0,
+        "_id": "55bafa2a4122820c02c9e1a5",
+        "chain": [
+          {
+            "time": "2015-07-31T04:31:38.783Z",
+            "device": "1",
+            "userId": "55b8a6f372a00c3d053deaa3",
+            "position": 0
+          }
+        ]
+      }
+    }
+  }
+  (可以只返回’success'之类的)
+------------------------------------------------------------------------------------------
+get  /passSix
+创建或收到六度后 选择next userId
+  var userId = req.header('userId'),
+    token = req.header('token'),
+    sixId = req.header('sixId'),
+    nextId = req.header('nextId');
+
+  55b8a6f372a00c3d053deaa3
+  eca7afbc1fd268a39ec13e08b9221a28
+  55bafbd94122820c02c9e1a6
+  55b7d569d2764c3202c56b3c
+
+  {
+    "status": "OK",
+    "data": {
+      "chain": [
+        {
+          "time": "2015-07-31T04:38:49.710Z",
+          "device": "83c8a73120b97c206e025f6803c35214072cd397c5e7720b50e4fc6c89c36c89",
+          "userId": "55b8a6f372a00c3d053deaa3",
+          "position": 0
+        },
+        {
+          "position": 1,
+          "userId": "55b7d569d2764c3202c56b3c",
+          "device": "83c8a73120b97c206e025f6803c35214072cd397c5e7720b50e4fc6c89c36c89",
+          "time": "2015-07-31T04:45:23.790Z"
+        },
+        {
+          "position": 2,
+          "userId": "55b7d569d2764c3202c56b3c",
+          "device": "83c8a73120b97c206e025f6803c35214072cd397c5e7720b50e4fc6c89c36c89",
+          "time": "2015-07-31T05:07:03.309Z"
+        },
+        {
+          "position": 3,
+          "userId": "55b7d569d2764c3202c56b3c",
+          "device": "83c8a73120b97c206e025f6803c35214072cd397c5e7720b50e4fc6c89c36c89",
+          "time": "2015-07-31T05:07:05.610Z"
+        },
+        {
+          "position": 4,
+          "userId": "55b7d569d2764c3202c56b3c",
+          "device": "83c8a73120b97c206e025f6803c35214072cd397c5e7720b50e4fc6c89c36c89",
+          "time": "2015-07-31T05:07:07.032Z"
+        }
+      ],
+      "status": 0
+    }
+  }
+------------------------------------------------------------------------------------------
+get  /completeSix
+target确认完成六度链
+  var userId = req.header('userId'),
+    token = req.header('token'),
+    sixId = req.header('sixId');
+------------------------------------------------------------------------------------------
+get  /generateInvitation
+  var userId = req.header('userId'),
+    token = req.header('token'),
+    sixId = req.header('sixId');
+------------------------------------------------------------------------------------------
+get  /acceptInvitation
+  var userId = req.header('userId'),
+    token = req.header('token'),
+    code = req.header('code');

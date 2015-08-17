@@ -39,6 +39,11 @@ Deck.clean = function(callback) {
 };
 
 Deck.getOne = function(card, age, callback) {
+  if (card == 'Joker') {
+    var num = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'],
+      cor = ['黑桃','红桃','草花','方块'];
+    card = num[parseInt(Math.random()*13)] + cor[parseInt(Math.random()*4)]
+  }
   deckModel.findOne({card: card}, function(err, deck) {
     if (err) {
       return callback(err);

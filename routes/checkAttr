@@ -1,0 +1,10 @@
+
+/post
+
+  var key = req.body.key,
+    value = req.body.value;
+
+    key ∈ [ 'nickname',   'email',    'phone']
+
+
+  返回值 你想要什么 现在是available/ not available

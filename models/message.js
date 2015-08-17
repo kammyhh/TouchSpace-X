@@ -4,8 +4,9 @@
 var mongoose = require('./mongoose.js');
 var messageSchema = new mongoose.Schema({
   from: {
-    username: String,
-    constellation: String
+    userId: String,
+    constellation: String,
+    nickname: String
   },
   to: String,
   message: String,
@@ -44,17 +45,32 @@ Message.prototype.save = function(callback) {
   });
 };
 
-Message.receive = function(username, callback) {
-  messageModel.find({to: username, isRead: 0}, {_id: 0, from: 1, message:1, date:1}, function(err, messages){
+Message.receive = function(userId, callback) {
+  messageModel.find({to: userId, isRead: 0}, {_id: 1, from: 1, message:1, date:1}, function(err, messages){
     if (err) {
       return callback(err);
     }
     callback(null, messages);
-    messageModel.update({to: username, isRead: 0}, {isRead: 1}, { multi: true }, function(err) {
-      if (err) {
-        return callback(err);
-      }
-    })
+  }).sort({date: -1})
+};
+
+Message.history = function(userId, contactId,callback) {
+  messageModel.find(  {$or:[{to: userId, 'from.userId': contactId},
+    {to: contactId, 'from.userId': userId}]},
+    {_id: 1, from: 1, message:1, date:1}, function(err, messages){
+    if (err) {
+      return callback(err);
+    }
+    callback(null, messages);
+  }).sort({date: -1}).limit(10)
+};
+
+Message.confirm = function(userId, msgIds, callback) {
+  messageModel.update({to: userId, _id: {$in: msgIds}, isRead: 0}, {isRead: 1}, { multi: true }, function(err) {
+    if (err) {
+      return callback(err);
+    }
+    callback(null);
   })
 };
 
@@ -62,6 +78,33 @@ Message.sendFromConstellation = function(constelllation, callback) {
   messageModel.count({'from.constellation': constelllation}, function(err, count){
     callback(null, count)
   })
-}
+};
+
+Message.lastTime = function(userId, callback) {
+  messageModel.find({to: userId}, {_id: 1, from: 1, date: 1}, function (err, messages) {
+    if (err) {
+      return callback(err);
+    }
+    var lastTime = [];
+    for (var i = 0; i < messages.length; i++) {
+      if (lastTime[messages[i]['from']['userId']] == undefined) {
+        lastTime[messages[i]['from']['userId']] = messages[i]['date']
+      } else if (lastTime[messages[i]['from']['userId']] < messages[i]['date']) {
+        lastTime[messages[i]['from']['userId']] = messages[i]['date']
+      }
+    }
+    callback(null, lastTime);
+  }).sort({date: -1})
+};
+
+Message.lastOne = function(userId, contactId, callback) {
+  messageModel.find(  {$or:[{to: userId, 'from.userId': contactId},
+    {to: contactId, 'from.userId': userId}]}, {_id:0, message: 1, date: 1, from: 1}, function (err, messages) {
+    if (err) {
+      return callback(err);
+    }
+    callback(null,messages[0]);
+  }).sort({date: -1})
+};
 
 module.exports = Message;

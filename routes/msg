@@ -1,0 +1,34 @@
+router.get('/messages', function(req, res){
+  utils.receiveMessage(req, res)
+});
+
+  var userId = req.header('userId'),
+    token = req.header('token');
+
+
+=======================================================
+
+
+router.get('/msgReceived', function(req, res){
+  utils.confirmMessage(req, res)
+});
+
+  var userId = req.header('userId'),
+    token = req.header('token');
+
+
+
+=======================================================
+
+
+
+router.post('/messages', function(req, res){
+  utils.sendMessage(req, res)
+});
+
+  var userId = req.header('userId'),
+    token = req.header('token'),
+        to = req.body.to,  //target userId
+        msg = req.body.msg;
+
+=======================================================

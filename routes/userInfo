@@ -1,0 +1,144 @@
+
+  var userId = req.header('userId'),
+    token = req.header('token');
+
+    55b8a9f4e26df18d05c486ae
+    cd38773bd7a4f3ef8bb818604b78c7e6
+
+    {
+      "status": "OK",
+      "data": {
+        "info": {
+          "detail": {
+            "birthday": "1990-03-29T00:00:00.000Z",
+            "flag": 0,
+            "energy": 0,
+            "constellation": "白羊座",
+            "guard_card": "J草花",
+            "life_card": "7草花",
+            "email": "rango@touchspacex.com",
+            "phone": "18817727721",
+            "gender": 1,
+            "nickname": "RangoJT"
+          },
+          "last_login": {
+            "time": "2015-07-30T07:29:47.909Z",
+            "alive_time": "2015-07-29T10:24:52.073Z",
+            "device": "1",
+            "z": 0,
+            "y": 0,
+            "x": 0,
+            "ip": "10.1.5.107"
+          },
+          "purchased_music": [],
+          "contact": [],
+          "stranger": [],
+          "time_line": [],
+          "online_duration": 0
+        },
+        "secret_number": 6,
+        "age": 25,
+        "deck": {
+          "life_card": {
+            "substitution": [
+              "Q方块",
+              null
+            ],
+            "environment": [
+              "7黑桃",
+              null
+            ],
+            "result": [
+              "J黑桃",
+              null
+            ],
+            "Pluto": [
+              "6草花",
+              null
+            ],
+            "long_term": [
+              "6红桃",
+              null
+            ],
+            "Neptune": [
+              "3草花",
+              null
+            ],
+            "Uranus": [
+              "10草花",
+              "3草花"
+            ],
+            "Saturn": [
+              "7黑桃",
+              "2草花"
+            ],
+            "Jupiter": [
+              "7方块",
+              "Q方块"
+            ],
+            "Mars": [
+              "K草花",
+              "9草花"
+            ],
+            "Venus": [
+              "4黑桃",
+              "J方块"
+            ],
+            "Mercury": [
+              "3红桃",
+              "2黑桃"
+            ]
+          },
+          "guard_card": {
+            "substitution": [
+              "9黑桃",
+              null
+            ],
+            "environment": [
+              "6草花",
+              null
+            ],
+            "result": [
+              "2黑桃",
+              null
+            ],
+            "Pluto": [
+              "8草花",
+              null
+            ],
+            "long_term": [
+              "10方块",
+              null
+            ],
+            "Neptune": [
+              "8红桃",
+              null
+            ],
+            "Uranus": [
+              "4草花",
+              "8红桃"
+            ],
+            "Saturn": [
+              "10方块",
+              "3方块"
+            ],
+            "Jupiter": [
+              "Q黑桃",
+              "7黑桃"
+            ],
+            "Mars": [
+              "4红桃",
+              "4方块"
+            ],
+            "Venus": [
+              "J方块",
+              "10红桃"
+            ],
+            "Mercury": [
+              "A草花",
+              "8方块"
+            ]
+          }
+        }
+      }
+    }
