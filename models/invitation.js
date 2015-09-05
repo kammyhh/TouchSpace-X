@@ -5,6 +5,7 @@ var mongoose = require('./mongoose.js');
 var invitationSchema = new mongoose.Schema({
   code: String,
   sixId: String,
+  phone: String,
   time: Date
 }, {
   collection: 'Invitations'
@@ -15,6 +16,7 @@ var invitationModel = mongoose.model('Invitation', invitationSchema);
 function Invitation(invitation) {
   this.code = invitation.code;
   this.sixId = invitation.sixId;
+  this.phone = invitation.phone;
   this.time = invitation.time;
 }
 
@@ -22,6 +24,7 @@ Invitation.prototype.save = function(callback) {
   var invitation = {
     code: this.code,
     sixId: this.sixId,
+    phone: this.phone,
     time: this.time
   };
 
@@ -55,8 +58,8 @@ Invitation.genCode = function(callback) {
   })
 };
 
-Invitation.acceptCode = function(code, callback) {
-  invitationModel.findOne({code: code}, function (err, invitation) {
+Invitation.acceptCode = function(phone, code, callback) {
+  invitationModel.findOne({phone: phone, code: code}, function (err, invitation) {
     if (err) {
       return callback(err);
     }

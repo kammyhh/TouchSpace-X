@@ -8,8 +8,15 @@ var querystring = require('querystring');
 var LifeGuardCard = require('../models/life_guard_card.js');
 var Solution = require('../models/solution.js');
 var Deck = require('../models/deck.js');
+var Value = require('../value.js');
+var log = require('../log').logger;
 
-var ip = '10.1.6.225';
+
+
+var ip = '119.254.102.92';
+log.info('API loaded.');
+
+
 
 router.get('/', function(req, res) {
   res.send('Date:'+ new Date(Date.now()));
@@ -118,8 +125,20 @@ router.post('/login', function(req, res) {
   utils.login(req, res)
 });
 
+router.get('/logout', function(req, res) {
+  utils.logout(req, res)
+});
+
 router.post('/locate', function(req, res) {
   utils.locate(req, res)
+});
+
+router.get('/verification', function(req, res) {
+  utils.verification(req, res)
+});
+
+router.get('/verify', function(req, res) {
+  utils.verify(req, res)
 });
 
 
@@ -130,6 +149,10 @@ router.get('/register', function(req, res) {
 
 router.post('/editProfile', function(req, res) {
   utils.editProfile(req, res)
+});
+
+router.get('/changePassword', function(req, res) {
+  utils.changePassword(req, res)
 });
 
 router.post('/uploadAvatar', function(req, res) {
@@ -183,8 +206,24 @@ router.post('/cardSolution', function(req, res) {
   utils.cardSolution(req, res)
 });
 
+router.get('/secretNumberInfo', function(req, res) {
+  utils.secretNumberInfo(req, res)
+});
+
 router.post('/constellationInfo', function(req, res) {
   utils.constellationInfo(req, res)
+});
+
+router.get('/loadStars', function(req, res) {
+  utils.loadStars(req, res)
+});
+
+router.get('/starInfo', function(req, res) {
+  utils.starInfo(req, res)
+});
+
+router.get('/timeLine', function(req, res) {
+  utils.timeLine(req, res)
 });
 
 router.post('/longTerm', function(req, res) {
@@ -234,6 +273,10 @@ router.get('/fetchMusicList', function(req, res) {
   utils.fetchMusicList(req, res)
 });
 
+router.get('/musicInfo', function(req, res) {
+  utils.musicInfo(req, res)
+});
+
 
 //match
 router.get('/findMatch', function(req, res) {
@@ -252,47 +295,48 @@ router.post('/uploadStranger', function(req, res) {
   utils.uploadStranger(req, res)
 });
 
-router.post('/delStranger', function(req, res) {
+router.get('/delStranger', function(req, res) {
   utils.delStranger(req, res)
 });
 
 
 //six degree
-router.get('/newSix', function(req, res) {
-  utils.newSix(req, res)
-});
 
-router.get('/allSix', function(req, res) {
-  utils.allSix(req, res)
-});
-
-router.get('/pickSix', function(req, res) {
-  utils.pickSix(req, res)
-});
-
-router.get('/readSix', function(req, res) {
-  utils.readSix(req, res)
-});
-
-router.post('/establishSix', function(req, res) {
-  utils.establishSix(req, res)
-});
-
-router.get('/passSix', function(req, res) {
-  utils.passSix(req, res)
-});
-
-router.get('/completeSix', function(req, res) {
-  utils.completeSix(req, res)
-});
-
-router.get('/generateInvitation', function(req, res) {
-  utils.generateInvitation(req, res)
-});
-
-router.get('/acceptInvitation', function(req, res) {
-  utils.acceptInvitation(req, res)
-});
+//router.get('/newSix', function(req, res) {
+//  utils.newSix(req, res)
+//});
+//
+//router.get('/allSix', function(req, res) {
+//  utils.allSix(req, res)
+//});
+//
+//router.get('/pickSix', function(req, res) {
+//  utils.pickSix(req, res)
+//});
+//
+//router.get('/readSix', function(req, res) {
+//  utils.readSix(req, res)
+//});
+//
+//router.post('/establishSix', function(req, res) {
+//  utils.establishSix(req, res)
+//});
+//
+//router.get('/passSix', function(req, res) {
+//  utils.passSix(req, res)
+//});
+//
+//router.get('/completeSix', function(req, res) {
+//  utils.completeSix(req, res)
+//});
+//
+//router.get('/generateInvitation', function(req, res) {
+//  utils.generateInvitation(req, res)
+//});
+//
+//router.get('/acceptInvitation', function(req, res) {
+//  utils.acceptInvitation(req, res)
+//});
 
 
 //test
@@ -334,22 +378,12 @@ router.get('/init/period', function(req, res) {
   init.initPeriod(req, res)
 });
 
-var log4js = require('log4js');
-log4js.configure({
-  appenders: [
-    { type: 'console' }, //控制台输出
-    {
-      type: 'file', //文件输出
-      filename: '/tmp/tsx_access.log',
-      maxLogSize: 1024,
-      backups:3,
-      category: 'normal'
-    }
-  ]
+router.get('/init/music', function(req, res) {
+  init.updateMusicList(req, res)
 });
 
-var logger = log4js.getLogger('normal');
-logger.setLevel('INFO');
+
+
 
 var wechat = require('wechat');
 var wechatApi = require('wechat-api');
@@ -362,7 +396,6 @@ var config = {
 
 //var api = new wechatApi(config['appid'], config['appSecret']);
 
-var fs = require('fs');
 var api = new wechatApi(config['appid'], config['appSecret'], function (callback) {
       fs.read('/tmp/access_token.txt', 'utf8', function (err, txt) {
         if (err) {return callback(err);}
@@ -375,22 +408,33 @@ var api = new wechatApi(config['appid'], config['appSecret'], function (callback
 router.use('/wechat', wechat(config, function (req, res, next) {
   // 微信输入信息都在req.weixin上
   var message = req.weixin;
+  var auto_reply = Value.auto_reply_list;
   if (message.MsgType === 'text') {
     var msg = message['Content'];
     var dateReg = /^\d{8}$/;
 
-    if ((msg.indexOf('最帅') > -1 )||(msg.indexOf('最屌') > -1 )){
-      res.reply('黄日天')
-    } else if (dateReg.test(msg)) {
+    for (var i = 1; i < auto_reply.length; i++) {
+      if ((msg.indexOf(auto_reply[i].keyword) > -1)) {
+        res.reply(auto_reply[i].reply);
+        return;
+      }
+    }
+
+    if (dateReg.test(msg)) {
       msg = msg.substr(0, 4) + '-' + msg.substr(4, 2) + '-' + msg.substr(6, 2);
       var birthday = new Date(msg);
-      utils.promotion(birthday, function(response){
-        res.reply(response)
+      utils.promotion(birthday, function (response) {
+        res.reply(response);
       })
     } else {
       res.reply({
         type: 'transfer_customer_service'
       })
+    }
+
+  } else if (message.MsgType === 'event') {
+    if (message.Event == 'subscribe') {
+      res.reply(auto_reply[0].reply)
     }
   }
 

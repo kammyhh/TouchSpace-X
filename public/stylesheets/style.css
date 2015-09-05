@@ -1,6 +1,15 @@
+html, body {
+    background: url(../pics/bg.png);
+    width:  100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
 canvas {
     display: block;
 }
+
 #input {
     display: none;
     position: absolute;
@@ -13,12 +22,13 @@ canvas {
     z-index:1000;
     overflow: auto;
 }
+
 #back {
     display: none;
     position: absolute;
-    top: 73%;
-    left: 25%;
-    width: 50%;
+    top: 83%;
+    left: 10%;
+    width: 40%;
     height: 10%;
     padding: 0;
     border: 0;
@@ -37,82 +47,169 @@ canvas {
     z-index:1000;
     overflow: auto;
 }
+
 #download {
     display: none;
     position: absolute;
     top: 83%;
-    left: 25%;
-    width: 50%;
+    left: 50%;
+    width: 40%;
     height: 10%;
     padding: 0px;
     border: 0px;
     z-index:1000;
     overflow: auto;
 }
+
+#download_ios {
+    display: none;
+    position: absolute;
+    top: 65%;
+    left: 25%;
+    width: 25%;
+    height: 8%;
+    padding: 0px;
+    border: 0px;
+    z-index:1000;
+    overflow: auto;
+}
+
+#download_android {
+    display: none;
+    position: absolute;
+    top: 65%;
+    left: 50%;
+    width: 25%;
+    height: 8%;
+    padding: 0px;
+    border: 0px;
+    z-index:1000;
+    overflow: auto;
+}
+
+#follow {
+    display: none;
+    position: absolute;
+    top: 73%;
+    left: 25%;
+    width: 50%;
+    height: 7%;
+    padding: 0px;
+    border: 0px;
+    z-index:1000;
+    overflow: auto;
+}
+
 div.drum-wrapper {
     float: left;
 }
+
 div.drum {
     transition-duration: 0.2s;
     -webkit-transition-duration: 0.2s;
 }
+
 div.drum figure {
     margin-left: 40px;
     text-align: left;
 }
+
 #drum_fullYear {
-    margin-left: 10px;
-    width: 200px;
+    margin-left: -9px;
+    width: 120px;
 }
+
 #drum_month {
-    margin-left: 10px;
-    width: 160px;
+    margin-left: 15px;
+    width: 80px;
 }
+
 #drum_date {
-    width: 100px;
+    margin-left: 15px;
+    width: 80px;
 }
+
 div.date-wrapper {
     width: 600px;
 }
+
 div.date-wrapper form {
     position: relative;
 }
+
 #wrapper {
     position:relative;
     z-index:1;
     height:200px;
     overflow:hidden;
 }
+
 #ta_content {
     width: 400px;
     height: 800px;
 }
 
-#content
-{
+#content {
     margin: 120px auto;
     width: 80%;
 }
 
-.loadBar
-{
+.loadBar {
     display: none;
     width: 30%;
     left: 35%;
     height: 10%;
     top: 33.2%;
     position: absolute;
+    text-align:center;
 }
 
-.loadBar .percentNum
-{
-    height:100px;
+.loadBar .percentNum {
+    height:100%;
     display:block;
     margin:1px 1px;
-    text-align:center;
-    line-height:100px;
+    line-height:136px;
 
     font-size: 40px;
     color: #fff;
-
 }
+
+#total {
+    color:#ffffff;
+    width:500px;
+    height:40px;
+    line-height:40px;
+    margin:80px auto 20px auto;
+    font-size:20px
+}
+
+.t_num {
+    display:inline-block;
+    line-height:13px;
+    margin:2px 4px 0 4px;
+}
+
+.t_num i {
+    width:90px;
+    height:50px;
+    display:inline-block;
+    background: url(../pics/number.png) no-repeat;
+    background-position:0 0;
+    text-indent:-999em
+}
+
+.f_num {
+    display:inline-block;
+    line-height:13px;
+    margin:2px 4px 0 4px;
+}
+
+.f_num i {
+    width:93px;
+    height:45px;
+    display:inline-block;
+    background: url(../pics/numbers.jpg) no-repeat;
+    background-position:0 0;
+    text-indent:-999em
+}
+

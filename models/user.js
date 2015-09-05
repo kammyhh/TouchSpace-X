@@ -30,14 +30,19 @@ var userSchema = new mongoose.Schema({
   contact: Array,
   stranger: Array,
   last_login: {
-    ip: String,
+    ip: {type: String, default: '1.1.1.1'},
+    x: {type: Number, default: 0},
+    y: {type: Number, default: 0},
+    z: {type: Number, default: 0},
+    city: {type: String, default: '未知'},
+    time: {type: Date, default: null},
+    alive_time: {type: Date, default: null},
+    device: {type: String, default: '1'}
+  },
+  star: {
     x: Number,
     y: Number,
-    z: {type: Number, default: 0},
-    city: String,
-    time: Date,
-    alive_time: Date,
-    device: {type: String, default: '1'},
+    z: Number
   },
   time_line: Array,
   left_chance: Number,
@@ -57,6 +62,7 @@ function User(user) {
   this.contact = user.contact;
   this.stranger = user.stranger;
   this.last_login = user.last_login;
+  this.star = user.star;
   this.time_line = user.time_line;
   this.left_chance = user.left_chance;
   this.online_duration = user.online_duration;
@@ -72,6 +78,7 @@ User.prototype.save = function(callback) {
     contact: this.contact,
     stranger: this.stranger,
     last_login: this.last_login,
+    star: this.star,
     time_line: this.time_line,
     left_chance: this.left_chance,
     online_duration: this.online_duration
@@ -150,6 +157,15 @@ User.setLogin = function(userId, last_login, callback) {
   })
 };
 
+User.logout = function(userId, callback) {
+  userModel.update({userId: userId}, {token: 'empty'}, function (err) {
+    if (err) {
+      return callback(err);
+    }
+    callback(null);
+  })
+};
+
 User.verifyInterval = function(userId, last_login, callback) {
   userModel.update({_id: userId}, last_login, function (err, result) {
     if (err) {
@@ -214,12 +230,21 @@ User.auth = function(userId, token, callback) {
 };
 
 User.info = function(userId, callback) {
-  userModel.findOne({_id: userId}, function(err, user) {
-    if (err) {
-      return callback(err);
-    }
-    callback(null, user);
-  })
+  if (userId.length < 10) {
+    userModel.findOne({username: userId}, function (err, user) {
+      if (err) {
+        return callback(err);
+      }
+      callback(null, user);
+    })
+  } else {
+    userModel.findOne({_id: userId}, function (err, user) {
+      if (err) {
+        return callback(err);
+      }
+      callback(null, user);
+    })
+  }
 };
 
 User.countName = function(pre, callback){
@@ -349,7 +374,6 @@ User.addTimeLine = function(userId, time_line, callback) {
     if (err) {
       return callback(err);
     }
-    console.log(userId, user)
     var origin = user['time_line'];
     origin[origin.length] = time_line;
     userModel.update({_id: userId}, {time_line: origin}, function (err) {
@@ -405,8 +429,36 @@ User.targetList = function(target_list, callback) {
     if (err) {
       return callback(err);
     }
-    callback(target_users)
+    callback(null, target_users)
   })
 };
+
+User.retrieveTimeLine = function() {
+  userModel.update({}, {time_line: []}, {multi: true }, function(err, result){
+    //console.log(result);
+  })
+};
+
+User.retrieveLeftChance = function() {
+  userModel.update({}, {left_chance: 2}, {multi: true }, function(err, result){
+    //console.log(result);
+  })
+};
+
+User.loadStars = function(userId, constellation, callback) {
+  userModel.find({}, {star: 1, 'detail.experience': 1, 'detail.constellation': 1}, function(err, stars){
+    if (err) {
+      return callback(err);
+    }
+    callback(null, stars)
+    console.log(stars)
+  }).sort({'last_login.time': -1}).limit(1000)
+};
+
+User.changePassword = function(userId, password, callback) {
+  userModel.update({userId: userId}, {password: password}, function(err){
+    callback(null)
+  })
+}
 
 module.exports = User;

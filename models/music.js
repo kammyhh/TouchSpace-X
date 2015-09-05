@@ -6,6 +6,7 @@ var User = require('./user.js');
 var utils = require('../utils.js');
 var musicSchema = new mongoose.Schema({
   title: String,
+  constellation: String,
   demo: String,
   full: String,
   like: Array
@@ -17,6 +18,7 @@ var musicModel = mongoose.model('Music', musicSchema);
 
 function Music(music) {
   this.title = music.title;
+  this.constellation = music.constellation;
   this.demo = music.demo;
   this.full = music.full;
   this.like = music.like;
@@ -25,6 +27,7 @@ function Music(music) {
 Music.prototype.save = function(callback) {
   var music = {
     title: this.title,
+    constellation: this.constellation,
     demo: this.demo,
     full: this.full,
     like: this.like
@@ -78,15 +81,15 @@ Music.list = function(userId, callback) {
           list[i] = {
             id: musics[i]['_id'],
             title: musics[i]['title'],
-            url: '10.1.6.45:3000' + musics[i]['full'],
+            url: '10.1.7.241:3000' + musics[i]['full'],
             like: musics[i]['like'].length
           }
           purchased[purchased.length] = list[i]
         } else {
           list[i] = {
             id: musics[i]['_id'],
-            title: musics[i]['title'] + '(试听)',
-            url: '10.1.6.45:3000' + musics[i]['demo'],
+            title: musics[i]['title'] + '-试听',
+            url: '10.1.7.241:3000' + musics[i]['demo'],
             like: musics[i]['like'].length
           }
         }
@@ -104,6 +107,43 @@ Music.list = function(userId, callback) {
     })
   })
 };
+
+Music.query = function(musicId, callback) {
+  musicModel.findOne({_id: musicId}, function (err, music) {
+    callback(null, music);
+  })
+};
+
+Music.updateList = function(files, callback) {
+  var titles = [];
+  for (var i=0;i<files.length;i++){
+    var title = files[i].split('-')[1]||'null';
+    if (title != undefined) {
+      titles.push(title)
+    }
+  }
+  musicModel.find({title: {$in: titles}}, function (err, musics) {
+    var exists = []
+    for (var i=0;i<musics.length;i++) {
+      exists.push(musics[i].title)
+    }
+    var result = [];
+    for (i=0;i<titles.length;i++) {
+      if (!utils.if_contains(exists, titles[i])) {
+        result.push(titles[i])
+      }
+    }
+    callback(null, result);
+  })
+};
+
+Music.constellation = function(constellation, callback) {
+  musicModel.find({constellation: constellation}, function (err, list) {
+    callback(null, list);
+  })
+};
+
+
 
 
 module.exports = Music;

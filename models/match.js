@@ -43,7 +43,9 @@ Match.prototype.save = function(callback) {
 };
 
 Match.accept = function(matchId, userId, callback) {
+  console.log(matchId, userId)
   matchModel.findOne({_id: matchId}, function (err, match) {
+    console.log(match)
     if (err) {
       return callback(err);
     }

@@ -8,7 +8,10 @@ var Deck = require('./models/deck.js');
 var LifeGuardCard = require('./models/life_guard_card.js');
 var Period = require('./models/period.js');
 var Solution = require('./models/solution.js');
+var Music = require('./models/music.js');
 
+var Utils = require('./utils.js');
+var fs = require('fs');
 var xlsx = require('node-xlsx');
 
 exports.initDeck = function(req, res) {
@@ -271,5 +274,32 @@ exports.initPeriod = function(req, res) {
     }
     res.send('Periods imported.')
   })
+};
+
+exports.updateMusicList = function(req, res){
+  fs.readdir('./public/audios/demo', function(err,files) {
+    if (err) {
+      console.log("error:\n" + err);
+      return;
+    }
+    Music.updateList(files, function (err, list) {
+      for (var i=0;i<files.length;i++) {
+        var title = files[i].split('-')[1],
+          constellation = files[i].split('-')[0];
+        if (Utils.if_contains(list, title)) {
+          var newMusic = new Music({
+            title: title,
+            constellation: constellation,
+            demo: '/audios/demo/' + files[i],
+            full: '/audios/full/' + constellation + '-' + title,
+            like: []
+          });
+          newMusic.save(function (err, music) {
+          });
+        }
+      }
+    })
+  });
+  res.send('ok')
 };
 

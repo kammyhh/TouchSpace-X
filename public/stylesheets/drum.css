@@ -15,7 +15,7 @@ div.drum-wrapper .inner {
 div.drum-wrapper div.container {
 	position: absolute;
 	width: 100%;
-	top: 96px;
+	top: 60px;
 	left: 0px;
 	-webkit-perspective: 2200px;
 	-moz-perspective: 2200px;
@@ -25,7 +25,7 @@ div.drum-wrapper div.container {
 
 div.drum-wrapper, 
 div.drum-wrapper .inner {
-	height: 240px;
+	height: 200px;
 }
 
 .outside div.drum-wrapper {
@@ -97,9 +97,9 @@ div.drum figure {
 	position: absolute;
 	left: 0px;
 	top: 0px;
-	line-height: 40px;
+	line-height: 30px;
 	color: white;
-    font-size: 40px;
+    font-size: 30px;
 	margin: 0px;
 	padding: 0px 6px;
 	text-overflow: ellipsis;
@@ -110,6 +110,6 @@ div.drum figure {
 }
 
 div.drum-wrapper div.container, div.drum-wrapper figure {
-	height: 90px;
+	height: 70px;
 	line-height: 90px;
 }

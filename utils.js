@@ -6,11 +6,39 @@ var apn = require('apn');
 var async = require('async');
 var crypto = require('crypto');
 var fs= require('fs');
+var http = require('http');
+var querystring = require('querystring');
+
+
+var Chat_history = require('./models/chat_history.js');
+var Star_history = require('./models/star_history.js');
+var Characteristic = require('./models/characteristic.js');
+var Constellation = require('./models/constellation.js');
+var Deck = require('./models/deck.js');
+var Invitation = require('./models/invitation.js');
+var Verification = require('./models/verification.js');
+var LifeGuardCard = require('./models/life_guard_card.js');
+var Match = require('./models/match.js');
+var Message = require('./models/message.js');
+var Music = require('./models/music.js');
+var Notification = require('./models/notification.js');
+var Period = require('./models/period.js');
+var Six = require('./models/six.js');
+var Solution = require('./models/solution.js');
+var User = require('./models/user.js');
+var Version = require('./models/version.js');
+var log = require('./log').logger;
+var Value = require('./value.js');
+
+var ccap = require('ccap')();//Instantiated ccap class
 
 var code_txt = 0;
+
+
 exports.get_code_txt = function(req, res) {
   res.send(code_txt);
 };
+
 exports.get_code_img = function(req, res) {
   var ary = ccap.get();
   var buf = ary[1];
@@ -18,23 +46,6 @@ exports.get_code_img = function(req, res) {
   res.send(buf, txt);
   console.log(ary);
 };
-
-var Characteristic = require('./models/characteristic.js');
-var Constellation = require('./models/constellation.js');
-var Deck = require('./models/deck.js');
-var Invitation = require('./models/invitation.js');
-var LifeGuardCard = require('./models/life_guard_card.js');
-var Match = require('./models/match.js');
-var Message = require('./models/message.js');
-var Music = require('./models/music.js');
-var Period = require('./models/period.js');
-var Six = require('./models/six.js');
-var Solution = require('./models/solution.js');
-var User = require('./models/user.js');
-var Version = require('./models/version.js');
-
-var ccap = require('ccap')();//Instantiated ccap class
-
 
 var if_contains = function(arr, obj) {
   var i = arr.length;
@@ -123,13 +134,6 @@ var get_secret_number = function(birthday) {
   return sum;
 };
 
-var get_suit = {
-  '黑': 'A',   //黑桃
-  '红': 'B',   //红桃
-  '草': 'C',   //草花
-  '方': 'D'    //方块
-};
-
 var get_distance = function(lat1,lng1,lat2,lng2){
 
   var EARTH_RADIUS = 6378137.0;    //单位M
@@ -179,36 +183,16 @@ var get_period = function(birthday, today) {
     now = new Date(today),
     m = now.getMonth()+ 1,
     d = now.getDate(),
-    p,
-    period = {
-      1: 'Mercury',
-      2: 'Venus',
-      3: 'Mars',
-      4: 'Jupiter',
-      5: 'Saturn',
-      6: 'Uranus',
-      7: 'Neptune'
-    };
+    p;
   if (month > m) m += 12;
   p = parseInt(((m - month) * 365 / 12 + d - date) / 52) + 1;
-  return period[p];
+  return Value.period_digit_to_en[p];
 };
 
 var get_match_value = function(user, target) {
 
   var value, distance, card, number, contact, constellation;
   var sn_user, sn_target, dis;
-  var comp = {
-    1: 2,
-    2: 8,
-    3: 6,
-    4: 7,
-    5: 4,
-    6: 3,
-    7: 9,
-    8: 5,
-    9: 1
-  };
   var deck = user['deck'];
   var period = get_period(user['detail']['birthday'], Date.now());
 
@@ -242,7 +226,7 @@ var get_match_value = function(user, target) {
   sn_target = get_secret_number(target['detail']['birthday']);
   if (sn_user == sn_target) {
     number = 4;
-  } else if (sn_target == comp[sn_user]) {
+  } else if (sn_target == Value.digit_pair[sn_user]) {
     number = 3;
   } else {
     number = 0;
@@ -294,26 +278,11 @@ var apple_push = function(device_token, title, content) {
 };
 
 var cal_level = function(exp) {
-  var lvl = [
-    100,
-    140,
-    200,
-    275,
-    385,
-    540,
-    750,
-    1055,
-    1475,
-    2065,
-    2890,
-    4050,
-    5670
-  ];
   var level = 1;
-  for (var i = 0; i < lvl.length; i++) {
-    if (exp >= lvl[i]) {
+  for (var i = 0; i < Value.level.length; i++) {
+    if (exp >= Value.level[i]) {
       level += 1;
-      exp -= lvl[i]
+      exp -= Value.level[i]
     }
   }
   return {level: level, exp: exp};
@@ -326,16 +295,17 @@ var getSortFun = function(order, sortBy) {
 };
 //time_line.sort(getSortFun('asc', 'time'));
 
-var target_list = [
-  "55b1a1e2b409cb5c1a783702",
-  "55991ed0e7b4533805e1c5a5"
-];
-
 exports.test = function(req, res) {
+  var a = Math.round((Math.random() * 360 / 180 * Math.PI) * 100) / 100,
+    b = Math.round((Math.random() * 180 / 180 * Math.PI) * 100) / 100,
+    c = Math.round((Math.random() * 1000) * 100) / 100;
+  var x = Math.round(Math.cos(a) * Math.sin(b) * c * 100) / 100,
+    y = Math.round(Math.sin(a) * Math.sin(b) * c * 100) / 100,
+    z = Math.round(Math.cos(b) * c * 100) / 100;
+  console.log('\n\"x\":', x, ',\n\"y\":',y, ',\n\"z\":',z)
+
   res.send(new Date(Date.now()))
 };
-
-
 
 //info
 exports.checkAttr = function(req, res) {
@@ -396,50 +366,14 @@ exports.userInfo = function(req, res) {
             if (err) throw err;
             if ((deck1 != null) && (deck2 != null)) {
               var level = cal_level(user['detail']['experience'])['level'],
-                p = {
-                  1: 1,
-                  2: 1,
-                  3: 1,
-                  4: 2,
-                  5: 2,
-                  6: 2,
-                  7: 3,
-                  8: 3,
-                  9: 4,
-                  10: 5,
-                  11: 6,
-                  12: 7
-                },
-                cost = {
-                  1: 2,
-                  2: 2,
-                  3: 2,
-                  4: 2,
-                  5: 2,
-                  6: 2,
-                  7: 1.5,
-                  8: 1.5,
-                  9: 1,
-                  10: 0.5,
-                  11: 0.5,
-                  12: 0
-                },
-                cn = {
-                  Mercury: '水星',
-                  Venus: '金星',
-                  Mars: '火星',
-                  Jupiter: '木星',
-                  Saturn: '土星',
-                  Uranus: '天王星',
-                  Neptune: '海王星'
-                },
-                allow_period = p[level],
+                allow_period = Value.future_periods_of_level[level],
                 allow_end_time = new Date(Date.now() + allow_period * 4492800000);
               var response = {
                 status: 'OK',
                 data: {
                   info: {
                     detail: {
+                      avatar: user['detail']['avatar'],
                       birthday: user['detail']['birthday'],
                       flag: user['detail']['flag'],
                       energy: user['detail']['energy'],
@@ -461,11 +395,11 @@ exports.userInfo = function(req, res) {
                   },
                   level: level,
                   allow_end_time: allow_end_time,
-                  cost: cost[level],
+                  cost: Value.song_cost_of_level[level],
                   secret_number: secret_number,
                   age: age,
                   period: period,
-                  cn_period: cn[period],
+                  cn_period: Value.period_en_to_cn[period],
                   content: content,
                   deck: {
                     life_card: deck1['cards'],
@@ -473,7 +407,6 @@ exports.userInfo = function(req, res) {
                   }
                 }
               };
-              console.log(response);
               res.send(response)
             } else {
               response = {
@@ -505,36 +438,11 @@ exports.anytimeDeck = function(req, res) {
         age = get_age(birthday, someday);
       Period.identify(birthday, someday, function (err, period) {
         if (err) throw err;
-        var cn = {
-          Mercury: '水星',
-          Venus: '金星',
-          Mars: '火星',
-          Jupiter: '木星',
-          Saturn: '土星',
-          Uranus: '天王星',
-          Neptune: '海王星'
-        };
         var level = cal_level(user['detail']['experience'])['level'],
-          p = {
-            1: 1,
-            2: 1,
-            3: 1,
-            4: 2,
-            5: 2,
-            6: 2,
-            7: 3,
-            8: 3,
-            9: 4,
-            10: 5,
-            11: 6,
-            12: 7,
-            13: 7,
-            14: 7
-          },
-          allow_period = p[level],
+          allow_period = Value.future_periods_of_level[level],
           allow_end_time = new Date(Date.now() + allow_period * 4492800000);
         if (new Date(someday) > allow_end_time) {
-          var msg = '您将要查看的日期处于' + cn[period] + '周期，您当前的等级为' + level + ',没有权限查看';
+          var msg = '您将要查看的日期处于' + Value.period_en_to_cn[period] + '周期，您当前的等级为' + level + ',没有权限查看';
           response = {
             status: 'OK',
             data: {
@@ -543,7 +451,7 @@ exports.anytimeDeck = function(req, res) {
           };
           res.send(response)
         } else {
-          msg = '您的解读年龄为' + age + '您目前处于' + cn[period] + '行星周期，您目前等级为' + level + '，可以查看最多' + allow_period + '个周期牌阵，以下是当前周期牌阵解读';
+          msg = '您的解读年龄为' + age + '您目前处于' + Value.period_en_to_cn[period] + '行星周期，您目前等级为' + level + '，可以查看最多' + allow_period + '个周期牌阵，以下是当前周期牌阵解读';
           Deck.getOne(user['detail']['life_card'], age, function (err, deck1) {
             if (err) throw err;
             Deck.getOne(user['detail']['guard_card'], age, function (err, deck2) {
@@ -554,7 +462,7 @@ exports.anytimeDeck = function(req, res) {
                   data: {
                     age: age,
                     period: period,
-                    cn_period: cn[period],
+                    cn_period: Value.period_en_to_cn[period],
                     info: {
                       detail: {
                         life_card: user['detail']['life_card'],
@@ -604,22 +512,13 @@ exports.somedayDeck = function(req, res) {
         month = birth.getMonth() + 1,
         date = birth.getDate(),
         str_birth = String(month * 100 + date);
-      var cn = {
-        Mercury: '水星',
-        Venus: '金星',
-        Mars: '火星',
-        Jupiter: '木星',
-        Saturn: '土星',
-        Uranus: '天王星',
-        Neptune: '海王星'
-      };
 
       LifeGuardCard.findOne(str_birth, function (err, life_guard_card) {
         if (err) throw err;
         if (life_guard_card != null) {
           Period.identify(someday, Date.now(), function(err, period) {
             if (err) throw err;
-            var msg = '您所查看的朋友年龄为' + age + '，当前处于' + cn[period] + '行星周期，您只可查看其当前周期牌阵与5张年度派';
+            var msg = '您所查看的朋友年龄为' + age + '，当前处于' + Value.period_en_to_cn[period] + '行星周期，您只可查看其当前周期牌阵与5张年度牌';
             var life_card = life_guard_card['life_card'].split('或')[0],
               guard_card = life_guard_card['life_card'].split('或')[0];
             Deck.getOne(life_card, age, function (err, deck1) {
@@ -632,7 +531,7 @@ exports.somedayDeck = function(req, res) {
                     data: {
                       age: age,
                       period: period,
-                      cn_period: cn[period],
+                      cn_period: Value.period_en_to_cn[period],
                       info: {
                         detail: {
                           life_card: life_guard_card['life_card'],
@@ -690,90 +589,66 @@ exports.contactInfo = function(req, res) {
                 if (err) throw err;
                 if ((deck1 != null) && (deck2 != null)) {
                   var level = cal_level(contact['detail']['experience'])['level'],
-                    p = {
-                      1: 1,
-                      2: 1,
-                      3: 1,
-                      4: 2,
-                      5: 2,
-                      6: 2,
-                      7: 3,
-                      8: 3,
-                      9: 4,
-                      10: 5,
-                      11: 6,
-                      12: 7
-                    },
-                    cost = {
-                      1: 2,
-                      2: 2,
-                      3: 2,
-                      4: 2,
-                      5: 2,
-                      6: 2,
-                      7: 1.5,
-                      8: 1.5,
-                      9: 1,
-                      10: 0.5,
-                      11: 0.5,
-                      12: 0
-                    },
-                    cn = {
-                      Mercury: '水星',
-                      Venus: '金星',
-                      Mars: '火星',
-                      Jupiter: '木星',
-                      Saturn: '土星',
-                      Uranus: '天王星',
-                      Neptune: '海王星'
-                    },
-                    allow_period = p[level],
+                    allow_period = Value.future_periods_of_level[level],
                     allow_end_time = new Date(Date.now() + allow_period * 4492800000);
                   Message.lastOne(userId, contactId, function(err, message) {
                     if (err) throw err;
                     if (message == undefined) {
                       message = null;
                     }
-                    var response = {
-                      status: 'OK',
-                      data: {
-                        info: {
-                          detail: {
-                            birthday: contact['detail']['birthday'],
-                            flag: contact['detail']['flag'],
-                            energy: contact['detail']['energy'],
-                            experience: contact['detail']['experience'],
-                            constellation: contact['detail']['constellation'],
-                            guard_card: contact['detail']['guard_card'],
-                            life_card: contact['detail']['life_card'],
-                            email: contact['detail']['email'],
-                            phone: contact['detail']['phone'],
-                            gender: contact['detail']['gender'],
-                            nickname: contact['detail']['nickname']
-                          },
-                          last_login: user['last_login'],
-                          purchased_music: user['purchased_music'],
-                          contact: user['contact'],
-                          stranger: user['stranger'],
-                          time_line: user['time_line'],
-                          online_duration: user['online_duration']
-                        },
-                        level: level,
-                        allow_end_time: allow_end_time,
-                        cost: cost[level],
-                        age: age,
-                        period: period,
-                        cn_period: cn[period],
-                        deck: {
-                          life_card: deck1['cards'],
-                          guard_card: deck2['cards']
-                        },
-                        last_message: message
+                    Chat_history.query(userId, contactId, function(err, sent) {
+                      Chat_history.query(contactId, userId, function(err, received) {
+                        Message.count(userId, contactId, function (err, count1){
+                          Message.count(contactId, userId, function (err, count2) {
+                            sent += count1;
+                            received += count2;
+                            var response = {
+                              status: 'OK',
+                              data: {
+                                info: {
+                                  detail: {
+                                    avatar: user['detail']['avatar'],
+                                    birthday: contact['detail']['birthday'],
+                                    flag: contact['detail']['flag'],
+                                    energy: contact['detail']['energy'],
+                                    experience: contact['detail']['experience'],
+                                    constellation: contact['detail']['constellation'],
+                                    guard_card: contact['detail']['guard_card'],
+                                    life_card: contact['detail']['life_card'],
+                                    email: contact['detail']['email'],
+                                    phone: contact['detail']['phone'],
+                                    gender: contact['detail']['gender'],
+                                    nickname: contact['detail']['nickname']
+                                  },
+                                  last_login: user['last_login'],
+                                  purchased_music: user['purchased_music'],
+                                  contact: user['contact'],
+                                  stranger: user['stranger'],
+                                  time_line: user['time_line'],
+                                  online_duration: user['online_duration']
+                                },
+                                level: level,
+                                allow_end_time: allow_end_time,
+                                cost: Value.song_cost_of_level[level],
+                                age: age,
+                                period: period,
+                                cn_period: Value.period_en_to_cn[period],
+                                deck: {
+                                  life_card: deck1['cards'],
+                                  guard_card: deck2['cards']
+                                },
+                                last_message: message,
+                                sent: sent,
+                                received: received
+                              }
+                            };
+                            console.log(response);
+                            res.send(response)
 
-                      }
-                    };
-                    console.log(response);
-                    res.send(response)
+                          })
+                        })
+                      });
+                    });
                   })
                 } else {
                   response = {
@@ -926,6 +801,7 @@ exports.deckIntro = function(req, res) {
     + '3、每个人的行星周期从水星开始，到海王星结束一整年。水星的起始日期是每个人的生日当天，海王星的结束日期是下个生日的前一天。并非我们通常认为的从1月1日到12月31日。\n'
     + '4、除此之外，每年的牌阵中，还会有影响这一整年的5张牌，分别为【年度牌】【挑战牌】【结果牌】【祝福牌】【努力牌】，详细牌阵中会有其相关解释。\n'
     + '5、以下是你自己的行星周期列表';
+  console.log(content)
   res.send(content);
 };
 
@@ -974,6 +850,20 @@ exports.cardSolution = function(req, res) {
   })
 };
 
+exports.secretNumberInfo = function(req, res) {
+  var secret_number = req.header.digit;
+  Characteristic.query(secret_number, function(err, result){
+    if (err) throw  err;
+    var response = {
+      status: 'OK',
+      data: {
+        solution: result.characteristic
+      }
+    };
+    res.send(response)
+  })
+};
+
 exports.constellationInfo = function(req, res) {
   var constellation = req.body.constellation,
     userId = req.body.userId;
@@ -997,9 +887,9 @@ exports.constellationInfo = function(req, res) {
                       User.brightestInConstellation(constellation, function (err, user) {
                         if (err) throw err;
                         if (user != null) {
-                          var brightest = user['detail']['nickname'];
+                          var brightest = user;
                         } else {
-                          brightest = '无'
+                          brightest = null
                         }
                         User.countGenderInConstellation(1, constellation, function (err, man) {
                           var male = man, female = count - male;
@@ -1018,7 +908,6 @@ exports.constellationInfo = function(req, res) {
                               female: female.toString()
                             }
                           };
-                          console.log(response);
                           res.send(response)
                         })
                       })
@@ -1064,8 +953,137 @@ exports.constellationInfo = function(req, res) {
   })
 };
 
+exports.timeLine = function(req, res) {
+  var userId = req.header('userId'),
+    token = req.header('token');
+  User.auth(userId, token, function (err, user) {
+    if (err) throw err;
+    if (user != null) {
+      var response = {
+        status: 'OK',
+        data: {
+          time_line: user.time_line
+        }
+      };
+      res.send(response)
+
+    } else {
+      response = {
+        status: 'Not found',
+        data: {}
+      };
+      res.send(response)
+    }
+  })
+};
+
+exports.loadStars = function(req, res){
+  var userId = req.header('userId'),
+    token = req.header('token');
+  User.auth(userId, token, function (err, user) {
+    if (err) throw err;
+    if (user != null) {
+      User.loadStars(userId, user.detail.constellation, function (err, results) {
+        if (err) throw err;
+        var stars = [];
+        for (var i=0;i<results.length;i++) {
+          stars[i] = {
+            _id: results[i]._id,
+            star: results[i].star,
+            constellation: results[i].detail.constellation,
+            level: cal_level(results[i].detail.experience).level
+          }
+        }
+        var response = {
+          status: 'OK',
+          data: stars
+        };
+        res.send(response);
+      })
+    } else {
+      var response = {
+        status: 'Not found',
+        data: {}
+      };
+      res.send(response)
+    }
+  })
+};
+
+exports.starInfo = function(req, res) {
+  var userId = req.header('userId'),
+    token = req.header('token'),
+    starId = req.header('starId');
+  User.auth(userId, token, function (err, user) {
+    if (err) throw err;
+    if (user != null) {
+      User.info(starId, function (err, star) {
+        if (err) throw err;
+        User.rankInConstellation(userId, star.detail.constellation, function (err, rank) {
+          if (err) throw err;
+          if (rank != null) {
+            var newStar_history = new Star_history({
+              from: userId,
+              to: starId,
+              time: new Date(Date.now())
+            });
+            newStar_history.save(function () {
+              Star_history.count(userId, starId, function(err, count){
+                if (err) throw err;
+                console.log(count)
+              })
+            });
+            var response = {
+              status: 'OK',
+              data: {
+                avatar: star.detail.avatar,
+                constellation: star.detail.constellation,
+                gender: star.detail.gender,
+                nickname: star.detail.nickname,
+                life_card: star.detail.life_card,
+                rank: rank
+              }
+            };
+            res.send(response)
+          }
+        })
+      })
+    } else {
+      var response = {
+        status: 'Not found',
+        data: {}
+      };
+      res.send(response)
+    }
+  })
+};
+
 
 //user behavior
+exports.logout = function(req, res) {
+  var userId = req.header('userId'),
+    token = req.header('token');
+  User.auth(userId, token, function(err, user) {
+    if (err) throw err;
+    if (user != null) {
+      User.logout(userId, function (err) {
+        if (err) throw err;
+        var response = {
+          status: 'OK',
+          data: {}
+        };
+        res.send(response)
+      })
+    } else {
+      var response = {
+        status: 'Not found',
+        data: {}
+      };
+      res.send(response)
+    }
+  })
+};
+
 exports.login = function(req, res) {
   var username = req.body.username,
     password = req.body.password,
@@ -1082,7 +1100,6 @@ exports.login = function(req, res) {
   if ((x == undefined)||(y == undefined)||(z == undefined)) {
     x = 0; y = 0; z = 0;
   }
-
   User.login(username, password, function (err, user) {
     if (err) throw err;
     if (user != null) {
@@ -1125,7 +1142,6 @@ exports.login = function(req, res) {
               virgin: virgin
             }
           };
-          console.log(response);
           res.send(response)
         });
       });
@@ -1135,7 +1151,6 @@ exports.login = function(req, res) {
         status: 'Not found',
         data: {}
       };
-      console.log(response);
       res.send(response)
     }
   })
@@ -1171,7 +1186,6 @@ exports.locate = function(req, res) {
               userId: userId
             }
           };
-          console.log(response);
           res.send(response)
         });
       });
@@ -1183,7 +1197,7 @@ exports.locate = function(req, res) {
       res.send(response)
     }
   })
-}
+};
 
 exports.register = function(req, res) {
   var nickname = req.header('nickname'),
@@ -1198,7 +1212,6 @@ exports.register = function(req, res) {
         status: 'Nickname already exists',
         data: {}
       };
-      console.log(response);
       res.send(response)
     } else {
       User.checkPhone(phone, function (err, user) {
@@ -1207,7 +1220,6 @@ exports.register = function(req, res) {
             status: 'Phone already exists',
             data: {}
           };
-          console.log(response);
           res.send(response)
         } else {
           User.checkEmail(email, function (err, user) {
@@ -1216,7 +1228,6 @@ exports.register = function(req, res) {
                 status: 'Email already exists',
                 data: {}
               };
-              console.log(response);
               res.send(response)
             } else {
               var birth = new Date(birthday),
@@ -1226,13 +1237,25 @@ exports.register = function(req, res) {
                 int_birth = parseInt(str_birth),
                 constellation = get_constellation(int_birth);
 
+              //var x = Math.round((Value.constellation_division[constellation].start
+              //  + Value.constellation_division[constellation].range * Math.random()) * 100) / 100;
+              //var y = Math.round((Math.random() * 60 - 30) * 100) / 100;
+              //var z = Math.round((Math.random() * 40000 + 5000) * 100) / 100;
+
+              var a = Math.round((Math.random() * 360 / 180 * Math.PI) * 100) / 100,
+                b = Math.round((Math.random() * 180 / 180 * Math.PI) * 100) / 100,
+                c = Math.round((Math.random() * 1000) * 100) / 100;
+              var x = Math.round(Math.cos(a) * Math.sin(b) * c * 100) / 100,
+                y = Math.round(Math.sin(a) * Math.sin(b) * c * 100) / 100,
+                z = Math.round(Math.cos(b) * c * 100) / 100;
+
               LifeGuardCard.findOne(str_birth, function (err, life_guard_card) {
                 if (err) throw err;
                 if (life_guard_card != null) {
                   var life_card = life_guard_card['life_card'].split('或')[0],
-                    guard_card = life_guard_card['life_card'].split('或')[0],
+                    guard_card = life_guard_card['guard_card'].split('或')[0],
                     len = life_card.length,
-                    pre = life_card.substr(0, len - 2) + get_suit[life_card[len - 2]];
+                    pre = life_card.substr(0, len - 2) + Value.suit_character_to_letter[life_card[len - 2]];
                   User.countName(pre, function (err, count) {
                     var username = String(get_secret_number(birthday)) +
                       pre + String(count + 1);
@@ -1265,20 +1288,24 @@ exports.register = function(req, res) {
                         z: 0,
                         time: null,
                         alive_time: null,
-                        device: ''
+                        device: '1',
+                        city: '未知'
+                      },
+                      star: {
+                        x: x,
+                        y: y,
+                        z: z
                       },
                       left_chance: 2,
                       online_duration: 0
                     });
                     newUser.save(function (err, user) {
-                      console.log(user);
                       var response = {
                         status: 'OK',
                         data: {
                           username: user['username']
                         }
                       };
-                      console.log(response);
                       res.send(response)
                     });
                   });
@@ -1287,7 +1314,6 @@ exports.register = function(req, res) {
                     status: 'Invalid request',
                     data: {}
                   };
-                  console.log(response);
                   res.send(response)
                 }
               });
@@ -1295,6 +1321,84 @@ exports.register = function(req, res) {
           })
         }
       })
+    }
+  })
+};
+
+exports.verification = function(req, res) {
+  var phone = req.header('phone');
+  var limit = 30;
+  var code = (parseInt(Math.random() * 10)).toString()
+    + (parseInt(Math.random() * 10)).toString()
+    + (parseInt(Math.random() * 10)).toString()
+    + (parseInt(Math.random() * 10)).toString()
+    + (parseInt(Math.random() * 10)).toString()
+    + (parseInt(Math.random() * 10)).toString();
+
+  Verification.clear(phone, function(err, result){
+    var newVerification = new Verification({
+      code: code,
+      phone: phone,
+      time: new Date(Date.now())
+    });
+    newVerification.save(function (err, verification) {
+      if (err) throw err;
+    });
+  })
+
+  var postData = {
+    uid:'DPTSim4QgMrt',
+    pas:'5kc7xhhh',
+    cid:'3mNQanxoO8Fo',
+    p1:code,
+    p2:limit.toString(),
+    mob:phone,
+    type:'json'
+  };
+  var content = querystring.stringify(postData);
+  var options = {
+    host:'api.weimi.cc',
+    path:'/2/sms/send.html',
+    method:'POST',
+    agent:false,
+    rejectUnauthorized : false,
+    headers:{
+      'Content-Type' : 'application/x-www-form-urlencoded',
+      'Content-Length' :content.length
+    }
+  };
+  req = http.request(options,function(resp){
+    resp.setEncoding('utf8');
+    resp.on('data', function (chunk) {
+      res.send(JSON.parse(chunk));
+    });
+    resp.on('end',function(){
+      console.log('over');
+    });
+  });
+  req.write(content);
+  req.end();
+};
+
+exports.verify = function(req, res) {
+  var phone = req.header('phone'),
+    code = req.header('code');
+  Verification.verify(phone, code, function(err, code){
+    if (err) throw err;
+    if (code != null) {
+      var response = {
+        status: 'OK',
+        data: {
+          code: code.code
+        }
+      };
+      res.send(response)
+    } else {
+      response = {
+        status: 'Wrong',
+        data: {}
+      };
+      res.send(response)
     }
   })
 };
@@ -1366,6 +1470,41 @@ exports.editProfile = function(req, res) {
   })
 };
 
+exports.changePassword = function(req, res) {
+  var userId = req.header('userId'),
+    token = req.header('token'),
+    old_password = req.header('old_password'),
+    new_password = req.header('new_password');
+
+  User.auth(userId, token, function(err, user){
+    if (err) throw err;
+    if (user != null) {
+      if (user.password == old_password) {
+        User.changePassword(userId, new_password, function(err) {
+          if (err) throw err;
+          var response = {
+            status: 'OK',
+            data: {}
+          };
+          res.send(response)
+        })
+      } else {
+        var response = {
+          status: 'Password error',
+          data: {}
+        };
+        res.send(response)
+      }
+    } else {
+      response = {
+        status: 'Token error',
+        data: {}
+      };
+      res.send(response)
+    }
+  })
+};
+
 exports.uploadAvatar = function(req, res) {
   var userId = req.header('userId'),
     token = req.header('token');
@@ -1382,17 +1521,25 @@ exports.uploadAvatar = function(req, res) {
           if (err) throw err;
           User.setAvatar(user['_id'], avatar, function () {
             if (err) throw err;
-            response = {
-              status: 'OK',
-              data: {
-                target_path: avatar,
-                size: req.files.avatar.size + 'bytes'
-              }
+            var userInfo = {
+              city: user['last_login']['city']||'未知',
+              device: user['last_login']['device'],
+              avatar: avatar,
+              nickname:user['detail']['nickname']
             };
-            res.send(response);
-          });
-        });
-      });
+            Six.update(user['_id'].toString(), userInfo, function() {
+              response = {
+                status: 'OK',
+                data: {
+                  target_path: avatar,
+                  size: req.files.avatar.size + 'bytes'
+                }
+              };
+              res.send(response);
+            })
+          })
+        })
+      })
     } else {
       var response = {
         status: 'Token error',
@@ -1459,6 +1606,9 @@ exports.checkContact = function(req, res) {
             phone: users[i]['detail']['phone']
           }
         }
+        if (list.length == 0) {
+          list = null
+        }
         var response = {
           status: 'OK',
           data: {
@@ -1506,10 +1656,9 @@ exports.alive = function(req, res) {
   var userId = req.header('userId'),
     token = req.header('token');
   User.auth(userId, token, function (err, user) {
-    var last_alive = user['last_login']['alive_time'];
-
     if (err) throw err;
     if (user != null) {
+      var last_alive = user['last_login']['alive_time'];
       var verify_login_interval = function(callback) {
         if ((Date.now() - last_alive) > 600000) {
           var addition = last_alive - user['last_login']['time'],
@@ -1530,16 +1679,31 @@ exports.alive = function(req, res) {
         User.alive(userId, function (err) {
           if (err) throw err;
           var username = user['username'];
-          Message.receive(username, function (err, record) {
-            console.log(record);
+          //Message.receive(username, function (err, record) {
+          //  console.log(record);
+          //  var response = {
+          //    status: 'OK',
+          //    data: {
+          //      login: user['last_login'],
+          //      messages: record
+          //    }
+          //  };
+          //  res.send(response)
+          //})
+          Notification.get(userId, function(err, notifications) {
+            if (notifications.length == 0) {
+              notifications = null
+            }
+            if (err) throw err;
             var response = {
               status: 'OK',
               data: {
                 login: user['last_login'],
-                messages: record
+                notifications: notifications
               }
             };
-            res.send(response)
+            res.send(response);
+            //Notification.clear(userId);
           })
         })
       });
@@ -1564,7 +1728,7 @@ exports.sendMessage = function(req, res) {
         nickname = user['detail']['nickname'],
         to = req.body.to,
         msg = req.body.msg;
-      console.log(msg)
+      console.log(msg);
       var message = {
         from: {
           userId: userId,
@@ -1577,6 +1741,14 @@ exports.sendMessage = function(req, res) {
         date: Date.now()
       };
       new Message(message).save(function (err, record) {
+        console.log(record);
+      });
+      var notification = {
+        userId: to,
+        type: 'message',
+        notification: msg
+      };
+      new Notification(notification).save(function (err, record) {
         console.log(record);
       });
       var response = {
@@ -1654,12 +1826,10 @@ exports.confirmMessage = function(req, res) {
   var userId = req.header('userId'),
     token = req.header('token'),
     msgIds = req.header('msgIds').split(',');
-
   User.auth(userId, token, function (err, user) {
     if (err) throw err;
     if (user != null) {
       Message.confirm(userId, msgIds, function (err) {
-        console.log(msgIds)
         if (err) throw err;
         var response = {
           status: 'OK',
@@ -1767,6 +1937,34 @@ exports.fetchMusicList = function(req, res) {
   })
 };
 
+exports.musicInfo = function(req, res) {
+  var userId = req.header('userId'),
+    token = req.header('token'),
+    musicId = req.header('musicId');
+  User.auth(userId, token, function (err, user) {
+    if (err) throw err;
+    if (user != null) {
+      Music.query(musicId, function (err, music) {
+        if (err) throw err;
+        var response = {
+          status: 'OK',
+          data: {
+            music: music
+          }
+        };
+        res.send(response);
+        console.log(response)
+      })
+    } else {
+      var response = {
+        status: 'Token error',
+        data: {}
+      };
+      res.send(response)
+    }
+  })
+};
+
 
 //match
 exports.findMatch = function(req, res) {
@@ -1794,25 +1992,56 @@ exports.findMatch = function(req, res) {
       get_match(function (begin, end, max) {
         if (max > 0) {
           const beginId = results[begin]['_id'],
+            beginNick = results[begin]['detail']['nickname'],
+            endNick = results[end]['detail']['nickname'],
             endId = results[end]['_id'];
-          matches[matches.length] = {
-            begin: results[begin]['_id'],
-            end: results[end]['_id'],
+          var m = {
+            begin: beginId,
+            end: endId,
             value: max,
             time: Date.now(),
             status: 0
           };
-          var newMatch = new Match(matches.length);
-          newMatch.save(function (err) {
+          matches[matches.length] = m;
+          var newMatch = new Match(m);
+          newMatch.save(function (err, match) {
             if (err) throw err;
             User.incChance(beginId, -1, function (err) {
               if (err) throw err;
               User.incChance(endId, -1, function (err) {
                 if (err) throw err;
-                User.addTimeLine(beginId, {event: 'new match', time: Date.now()}, function (err) {
+                User.addTimeLine(beginId, {
+                  type: 'match',
+                  event: '与' + endNick + '匹配成功',
+                  time: Date.now()
+                }, function (err) {
                   if (err) throw err;
-                  User.addTimeLine(endId, {event: 'new match', time: Date.now()}, function (err) {
+                  User.addTimeLine(endId, {
+                    type: 'match',
+                    event: '与' + beginNick + '匹配成功',
+                    time: Date.now()
+                  }, function (err) {
                     if (err) throw err;
+                    var notification = {
+                      id: match['_id'],
+                      userId: beginId,
+                      type: 'match',
+                      percent: parseInt(Math.random() * 50 + 50),
+                      notification: '与' + endNick + '匹配成功'
+                    };
+                    new Notification(notification).save(function (err, record) {
+                      console.log(record);
+                    });
+                    notification = {
+                      id: match['_id'],
+                      userId: endId,
+                      type: 'match',
+                      percent: parseInt(Math.random() * 50 + 50),
+                      notification: '与' + beginNick + '匹配成功'
+                    };
+                    new Notification(notification).save(function (err, record) {
+                      console.log(record);
+                    });
                   })
                 })
               })
@@ -1835,7 +2064,7 @@ exports.findMatch = function(req, res) {
         matches: matches
       }
     };
-    console.log(response);
+    console.log(response.data.matches);
     res.send(response)
   })
 };
@@ -1844,11 +2073,11 @@ exports.acceptMatch = function(req, res) {
   var userId = req.header('userId'),
     token = req.header('token'),
     matchId = req.header('matchId');
-  User.auth(userId, token, function(err, user){
+  User.auth(userId, token, function(err, user) {
     var deviceId = user['last_login']['device'];
-    Match.accept(matchId, userId, function(err, targetId, status){
-      if (status == 3) {
-        User.info(targetId, function(err, target) {
+    Match.accept(matchId, userId, function (err, targetId, status) {
+      User.info(targetId, function (err, target) {
+        if (status == 3) {
           apple_push(deviceId, 'Match complete', {});
           apple_push(target['last_login']['device'], 'Match complete', {});
           var strangers = user['stranger'];
@@ -1856,18 +2085,26 @@ exports.acceptMatch = function(req, res) {
             if (if_contains(strangers, targetId)) {
             } else {
               strangers[strangers.length] = targetId;
-              User.setStranger(userId, strangers, function(err) {
+              User.setStranger(userId, strangers, function (err) {
                 if (err) throw err;
                 var target_strangers = target['stranger'];
                 if (target_strangers.length < 36) {
                   if (if_contains(target_strangers, userId)) {
                   } else {
                     target_strangers[target_strangers.length] = userId;
-                    User.setStranger(targetId, target_strangers, function(err) {
+                    User.setStranger(targetId, target_strangers, function (err) {
                       if (err) throw err;
-                      User.addTimeLine(targetId, {event: 'match complete', time: Date.now()}, function (err) {
+                      User.addTimeLine(targetId, {
+                        type: 'match',
+                        event: '已与' + user['detail']['nickname'] + '成为好友',
+                        time: Date.now()
+                      }, function (err) {
                         if (err) throw err;
-                        User.addTimeLine(userId, {event: 'match complete', time: Date.now()}, function (err) {
+                        User.addTimeLine(userId, {
+                          type: 'match',
+                          event: '已与' + target['detail']['nickname'] + '成为好友',
+                          time: Date.now()
+                        }, function (err) {
                           if (err) throw err;
                           var response = {
                             status: 'OK',
@@ -1885,23 +2122,31 @@ exports.acceptMatch = function(req, res) {
               })
             }
           }
-        });
-      } else {
-        User.addTimeLine(targetId, {event: 'match accepted', time: Date.now()}, function (err) {
-          if (err) throw err;
-          User.addTimeLine(userId, {event: 'match accepted', time: Date.now()}, function (err) {
+        } else {
+          User.addTimeLine(targetId, {
+            type: 'match',
+            event: user['detail']['nickname'] + '已接受与您的匹配',
+            time: Date.now()
+          }, function (err) {
             if (err) throw err;
-            var response = {
-              status: 'OK',
-              data: {
-                status: status
-              }
-            };
-            console.log(response);
-            res.send(response)
+            User.addTimeLine(userId, {
+              type: 'match',
+              event: '已接受与' + target['detail']['nickname'] + '的匹配',
+              time: Date.now()
+            }, function (err) {
+              if (err) throw err;
+              var response = {
+                status: 'OK',
+                data: {
+                  status: status
+                }
+              };
+              console.log(response);
+              res.send(response)
+            })
           })
-        })
-      }
+        }
+      });
     });
   });
 };
@@ -1919,9 +2164,9 @@ exports.rejectMatch = function(req, res) {
         User.incChance(target['_id'], 1, function(err){
           if (err) throw err;
           console.log(target['_id']);
-          User.addTimeLine(targetId, {event: 'match rejected', time: Date.now()}, function (err) {
+          User.addTimeLine(targetId, {type: 'match', event: user['detail']['nickname'] + '已拒绝与您的匹配', time: Date.now()}, function (err) {
             if (err) throw err;
-            User.addTimeLine(userId, {event: 'match rejected', time: Date.now()}, function (err) {
+            User.addTimeLine(userId, {type: 'match', event: '已拒绝与' + target['detail']['nickname'] + '的匹配', time: Date.now()}, function (err) {
               if (err) throw err;
               var response = {
                 status: 'OK',
@@ -2061,7 +2306,7 @@ exports.newSix = function(req, res) {
   })
 };
 
-exports.allSix = function(req, res) {
+exports.allSix = function(req, res)  {
   var userId = req.header('userId'),
     token = req.header('token');
   User.auth(userId, token, function (err, user) {
@@ -2105,14 +2350,39 @@ exports.pickSix = function(req, res) {
   User.auth(userId, token, function (err, user) {
     if (err) throw err;
     if (user != null) {
-      User.targetList(target_list, function(err, target_users){
-        var response = {
-          status: 'OK',
-          data: {
-            list: target_users
+      User.targetList(Value.target_list, function(err, target_users){
+        if (target_users!=null) {
+          var list = [];
+          for (var i = 0; i < target_users.length; i++) {
+            var secret_number = get_secret_number(target_users[i]['detail']['birthday']);
+            list[list.length] = {
+              userId: target_users[i]['_id'],
+              nickname: target_users[i]['detail']['nickname'],
+              life_card: target_users[i]['detail']['life_card'],
+              constellation: target_users[i]['detail']['constellation'],
+              avatar: target_users[i]['detail']['avatar'] || '',
+              city: target_users[i]['last_login']['city'],
+              secret_number: secret_number.toString()
+            }
           }
-        };
-        res.send(response)
+          if (list.length == 0) {
+            list = null
+          }
+          console.log(list)
+          var response = {
+            status: 'OK',
+            data: {
+              list: list
+            }
+          };
+          res.send(response)
+        } else {
+          response = {
+            status: 'Not found',
+            data: {}
+          };
+          res.send(response)
+        }
       });
     } else {
       var response = {
@@ -2151,50 +2421,76 @@ exports.readSix = function(req, res) {
 };
 
 exports.establishSix = function(req, res) {
-  var userId = req.header('userId'),
-    token = req.header('token'),
-    targetId = req.header('targetId'),
-    context = req.body.context;
+  var userId = req.body.userId,
+    token = req.body.token,
+    targetId = req.body.targetId,
+    nextId = req.body.nextId,
+    content = req.body.content;
   User.auth(userId, token, function (err, user) {
     if (err) throw err;
     if (user != null) {
       User.info(targetId, function(err, target) {
         if (err) throw err;
-        var newSix = new Six({
-          establish: userId,
-          target: {
-            id: targetId,
-            city: target['last_login']['city'],
-            nickname: target['detail']['nickname'],
-            avatar: target['detail']['avatar']
-          },
-          context: context,
-          chain: [{
-            position: 0,
-            userId: userId,
-            city: user['last_login']['city'],
-            nickname: user['detail']['nickname'],
-            avatar: user['detail']['avatar'],
-            device: user['last_login']['device'],
-            time: new Date(Date.now()),
-            isRead: 1
-          }],
-          update_time: new Date(Date.now()),
-          status: 0
-        });
-        newSix.save(function (err, six) {
-          console.log(six);
-          User.addTimeLine(userId, {event: 'six degree established', time: Date.now()}, function (err) {
-            if (err) throw err;
-            var response = {
-              status: 'OK',
-              data: {
-                six: six
-              }
-            };
-            res.send(response)
-          })
-        });
+        User.info(nextId, function(err, next) {
+          if (err) throw err;
+          var newSix = new Six({
+            establish: userId,
+            target: {
+              id: targetId,
+              city: target['last_login']['city'],
+              nickname: target['detail']['nickname'],
+              avatar: target['detail']['avatar']
+            },
+            content: content,
+            chain: [{
+              position: 0,
+              userId: userId,
+              city: user['last_login']['city']||'未知',
+              nickname: user['detail']['nickname'],
+              avatar: user['detail']['avatar'],
+              device: user['last_login']['device'],
+              time: new Date(Date.now()),
+              isRead: 1
+            }, {
+              position: 1,
+              userId: next['_id'].toString(),
+              city: next['last_login']['city']||'未知',
+              nickname: next['detail']['nickname'],
+              avatar: next['detail']['avatar'],
+              device: next['last_login']['device'],
+              time: new Date(Date.now()),
+              isRead: 0
+            }],
+            update_time: new Date(Date.now()),
+            status: 0
+          });
+          newSix.save(function (err, six) {
+            apple_push(six['chain'][1]['device'],
+              'You got a new six degree msg!',
+              {type: 'six', chain: six['chain']});
+            User.addTimeLine(six['chain'][1]['userId'], {type: 'six', event: 'six degree pass', time: Date.now()}, function (err) {
+              if (err) throw err;
+            });
+            User.addTimeLine(userId, {type: 'six', event: 'six degree established', time: Date.now()}, function (err) {
+              if (err) throw err;
+              var response = {
+                status: 'OK',
+                data: {
+                  six: six
+                }
+              };
+              res.send(response)
+            })
+          });
+          var notification = {
+            userId: nextId,
+            type: 'six',
+            notification: '来自' + user['detail']['nickname'] + '的六度请求'
+          };
+          new Notification(notification).save(function (err, record) {
+            console.log(record);
+          });
+        })
       })
     } else {
       var response = {
@@ -2224,7 +2520,7 @@ exports.passSix = function(req, res) {
             if (err) throw err;
             chain[chain.length] = {
               position: chain.length,
-              userId: nextId,
+              userId: next['_id'],
               city: next['last_login']['city'],
               nickname: next['detail']['nickname'],
               avatar: next['detail']['avatar'],
@@ -2233,9 +2529,8 @@ exports.passSix = function(req, res) {
               isRead: 0
             };
             for (var i = 0; i < chain.length - 2; i++) {
-              User.addTimeLine(six['chain'][i]['userId'], {event: 'six degree pass', time: Date.now()}, function (err) {
+              User.addTimeLine(six['chain'][i]['userId'], {type: 'six', event: 'six degree pass', time: Date.now()}, function (err) {
                 if (err) throw err;
-
               });
               apple_push(six['chain'][i]['device'],
                 'You got a new six degree msg!',
@@ -2247,6 +2542,14 @@ exports.passSix = function(req, res) {
         pre(function(){
           Six.pass(sixId, chain, function (err) {
             if (err) throw err;
+            var notification = {
+              userId: nextId,
+              type: 'six',
+              notification: '来自' + user['detail']['nickname'] + '的六度请求'
+            };
+            new Notification(notification).save(function (err, record) {
+              console.log(record);
+            });
             var response = {
               status: 'OK',
               data: {
@@ -2271,7 +2574,8 @@ exports.passSix = function(req, res) {
 exports.generateInvitation = function(req, res) {
   var userId = req.header('userId'),
     token = req.header('token'),
-    sixId = req.header('sixId');
+    sixId = req.header('sixId'),
+    phone = req.header('phone');
   User.auth(userId, token, function (err, user) {
     if (err) throw err;
     if (user != null) {
@@ -2280,6 +2584,7 @@ exports.generateInvitation = function(req, res) {
         var newInvitation = new Invitation({
           code: code,
           sixId: sixId,
+          phone: phone,
           time: new Date(Date.now())
         });
         newInvitation.save(function (err) {
@@ -2306,33 +2611,47 @@ exports.generateInvitation = function(req, res) {
 exports.acceptInvitation = function(req, res) {
   var userId = req.header('userId'),
     token = req.header('token'),
-    code = req.header('code');
+    code = req.header('code'),
+    phone = req.header('phone');
   User.auth(userId, token, function (err, user) {
     if (err) throw err;
     if (user != null) {
-      Invitation.acceptCode(code, function(err, invitation){
+      Invitation.acceptCode(phone, code, function(err, invitation){
         if (err) throw err;
-        Six.fetch(invitation['sixId'], function(err, six){
-          if (err) throw err;
-          var chain = six['chain'],
-            status = six['status'];
-          chain[chain.length] ={
-            position: chain.length,
-            userId: userId,
-            time: new Date(Date.now())
-          };
-          Six.pass(six['_id'], chain, function(err){
+        if (invitation != null ) {
+          Six.fetch(invitation['sixId'], function (err, six) {
             if (err) throw err;
-            var response = {
-              status: 'OK',
-              data: {
-                chain: chain,
-                status: status
-              }
+            var chain = six['chain'],
+              status = six['status'];
+            chain[chain.length] = {
+              position: chain.length,
+              userId: userId,
+              city: user['last_login']['city'],
+              nickname: user['detail']['nickname'],
+              avatar: user['detail']['avatar'],
+              device: user['last_login']['device'],
+              time: new Date(Date.now()),
+              isRead: 1
             };
-            res.send(response)
+            Six.pass(six['_id'], chain, function (err) {
+              if (err) throw err;
+              var response = {
+                status: 'OK',
+                data: {
+                  chain: chain,
+                  status: status
+                }
+              };
+              res.send(response)
+            });
           });
-        });
+        } else {
+          var response = {
+            status: 'Invalid code',
+            data: {}
+          };
+          res.send(response)
+        }
       });
     } else {
       var response = {
@@ -2359,6 +2678,7 @@ exports.completeSix = function(req, res) {
           for (var i = 0; i < chain.length - 1; i++) {
             console.log(six['chain'][i]['userId']);
             User.addTimeLine(six['chain'][i]['userId'], {
+              type: 'six',
               event: 'six degree complete',
               time: Date.now()
             }, function (err) {

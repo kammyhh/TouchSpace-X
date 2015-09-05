@@ -30,6 +30,15 @@ Characteristic.prototype.save = function(callback) {
   });
 };
 
+Characteristic.query = function(digit, callback) {
+  characteristicModel.findOne({digit: digit}, function(err, result){
+    if (err) {
+      return callback(err);
+    }
+    callback(null, result)
+  })
+};
+
 Characteristic.clean = function(callback) {
   characteristicModel.remove({}, function(){
     callback()

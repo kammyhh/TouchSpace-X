@@ -107,4 +107,13 @@ Message.lastOne = function(userId, contactId, callback) {
   }).sort({date: -1})
 };
 
+Message.count = function(from, to, callback) {
+  messageModel.count({to: to, 'from.userId': from}, function (err, count) {
+    if (err) {
+      return callback(err);
+    }
+    callback(null, count);
+  }).sort({date: -1})
+};
+
 module.exports = Message;

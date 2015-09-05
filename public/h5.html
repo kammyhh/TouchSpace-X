@@ -8,6 +8,7 @@
   <script src="javascripts/createjs.min.js"></script>
 
   <script src="javascripts/jquery-1.9.1.js"></script>
+  <script src="javascripts/animateBackground-plugin.js"></script>
   <script src="javascripts/hammer.min.js"></script>
   <script src="javascripts/iscroll.js"></script>
   <script src="javascripts/hammer.fakemultitouch.js"></script>
@@ -17,23 +18,79 @@
   <audio id="bgm" src="/audios/BGM.mp3" preload="auto" loop="loop"></audio>
 
 
-  <title>h5</title>
+  <title>TouchSpace-X</title>
   <style>
-    html, body {
-      background: url(pics/bg.png);
-      width:  100%;
-      height: 100%;
-      margin: 0;
-      padding: 0;
-    }
+
   </style>
   <script>
+    function show_num(n) {
+      var string_n;
+      if (n < 10) {
+        string_n = '0' + n;
+      } else {
+        string_n = String(n);
+      }
+      $("#cur_num").val(n);
+      for (var i = 0; i < 2; i++) {
+        var num = string_n.charAt(i);
+        var y = -parseInt(num) * 72; //y轴位置
+        var obj = $(".t_num i").eq(i);
+        obj.animate({
+              backgroundPositionY: String(y) + 'px'
+            }, 'slow', 'swing', function () {
+            }
+        );
+      }
+      var sum = n;
+      while (sum>9) {
+        var str = String(sum),
+            len = str.length;
+        sum = 0;
+        for (i=0;i<len;i++) {
+          sum += parseInt(str[i])
+        }
+      }
+      var f_num = String(sum).charAt(0);
+      var f_y = -parseInt(f_num) * 108; //y轴位置
+      var f_obj = $(".f_num i").eq(0);
+      f_obj.animate({
+            backgroundPositionY: String(f_y) + 'px'
+          }, 'slow', 'swing', function () {
+          }
+      );
+    }
+    $(function() {
+      $(".t_num").append("<i></i>");
+      $(".t_num").append("<i></i>");
+      $(".f_num").append("<i></i>");
+      show_num(0);
+      var org = '19800715';
+      setInterval(function () {
+        $(".t_num i").eq(0).stop;
+        $(".t_num i").eq(1).stop;
+        var birthday = $('#fullYear option:selected').val()
+            + $('#month option:selected').val()
+            + $('#date option:selected').val();
+        if (org != birthday) {
+          org = birthday;
+          var sum = 0;
+          for (var i = 0; i < birthday.length; i++) {
+            sum += parseInt(birthday[i])
+          }
+          show_num(sum);
+        }
+      }, 1000);
+    });
+
+
 
     function LoadingBar(id) {
       this.loadbar = $("#" + id);
       this.percentNumEle = $(".percentNum", this.loadbar);
       this.max = 100;
       this.currentProgress = 0;
+      document.getElementById('percentNum').style.lineHeight =
+          document.getElementById('loadBar01').offsetHeight + 'px'
     }
     LoadingBar.prototype = {
       constructor: LoadingBar,
@@ -48,6 +105,7 @@
           val = this.max;
         }
         this.currentProgress = parseInt((val / this.max) * 100) + "%";
+//        this.percentNumEle.style.lineHeight(this.percentNumEle.style.height);
         this.percentNumEle.text(this.currentProgress);
       }
     };
@@ -81,6 +139,7 @@
     queue.on("complete", handleComplete, this);
     queue.on("progress", handleProgress, this);
     queue.loadManifest([
+      {id: "back", src:"pics/back.png"},
       {id: "bg_cover", src:"pics/bg_cover.png"},
       {id: "bg_earth", src:"pics/bg_earth.png"},
       {id: "bg_earth_2", src:"pics/bg_earth_2.png"},
@@ -100,6 +159,7 @@
       {id: "china2", src:"pics/china2.png"},
       {id: "dot", src:"pics/dot.png"},
       {id: "dot_line", src:"pics/dot_line.png"},
+      {id: "download", src:"pics/download.png"},
       {id: "download_frame", src:"pics/download_frame.png"},
       {id: "earth", src:"pics/earth.png"},
       {id: "earth2", src:"pics/earth2.png"},
@@ -156,7 +216,11 @@
       }, 10);
     }, 800));
 
-//    init
+
+
+
+
+    //    init
     var oriWidth = 640, oriHeight = 1136;
     var ratio1, ratio2, ratio, ratio_2;
     var canvas, stage;
@@ -176,7 +240,7 @@
     var relation_duration = 10000;
 
     var max=0;
-    var sd=15;  //这里是控制速度的
+    var sd=10;  //这里是控制速度的
     var txt,lentxt,go;
 
     function textlist() {
@@ -251,9 +315,14 @@
       document.getElementById("content").style.visibility = "hidden";
       document.getElementById("birthday").style.visibility = "hidden";
       document.getElementById("datepicker").style.visibility = "hidden";
+      document.getElementById("total").style.visibility = "hidden";
+      document.getElementById("final").style.visibility = "hidden";
       document.getElementById("input").style.display = "none";
       document.getElementById("send").style.display = "none";
       document.getElementById("download").style.display = "none";
+      document.getElementById("download_ios").style.display = "none";
+      document.getElementById("download_android").style.display = "none";
+      document.getElementById("follow").style.display = "none";
       document.getElementById("back").style.display = "none";
 
 //      stage.removeAllChildren();
@@ -280,6 +349,7 @@
       bg_star.regY = 960;
       bg_star.alpha = 0;
       bg_star.x = window.innerWidth * 0.5;
+      bg_star.y = window.innerHeight * 0.5;
       bg_star.y = window.innerHeight * 0.5;
       stage.addChild(bg_star);
       createjs.Tween.get(bg_star)
@@ -463,7 +533,7 @@
           .wait(text_lines_wait_time)
           .to({alpha: 1}, text_fade_time * 0.25)
           .wait(text_fade_time)
-          .to({scaleX: ratio * 0.93, scaleY: ratio * 0.93, y: txt_line1.y - text_line_height * 1, alpha: 0.5}, text_fade_time * 0.25)
+          .to({scaleX: ratio * 0.93, scaleY: ratio * 0.93, y: txt_line1.y - text_line_height, alpha: 0.5}, text_fade_time * 0.25)
           .wait(text_fade_time)
           .to({scaleX: ratio * 0.86, scaleY: ratio * 0.86, y: txt_line1.y - text_line_height * 1.8}, text_fade_time * 0.25)
           .wait(text_fade_time)
@@ -488,7 +558,7 @@
           .wait(text_fade_time * 1.25)
           .to({y: txt_line1.y, alpha: 1}, text_fade_time * 0.25)
           .wait(text_fade_time)
-          .to({scaleX: ratio * 0.93, scaleY: ratio * 0.93, y: txt_line1.y - text_line_height * 1, alpha: 0.5}, text_fade_time * 0.25)
+          .to({scaleX: ratio * 0.93, scaleY: ratio * 0.93, y: txt_line1.y - text_line_height, alpha: 0.5}, text_fade_time * 0.25)
           .wait(text_fade_time)
           .to({scaleX: ratio * 0.86, scaleY: ratio * 0.86, y: txt_line1.y - text_line_height * 1.8}, text_fade_time * 0.25)
           .wait(text_fade_time)
@@ -511,7 +581,7 @@
           .wait(text_fade_time * 2.5)
           .to({y: txt_line1.y, alpha: 1}, text_fade_time * 0.25)
           .wait(text_fade_time)
-          .to({scaleX: ratio * 0.93, scaleY: ratio * 0.93, y: txt_line1.y - text_line_height * 1, alpha: 0.5}, text_fade_time * 0.25)
+          .to({scaleX: ratio * 0.93, scaleY: ratio * 0.93, y: txt_line1.y - text_line_height, alpha: 0.5}, text_fade_time * 0.25)
           .wait(text_fade_time)
           .to({alpha: 0}, text_fade_time * 0.25);
 
@@ -2272,7 +2342,7 @@
       birthday.scaleX = ratio * 2.5;
       birthday.scaleY = ratio * 2.5;
       birthday.alpha = 0;
-      birthday.regX = 75;
+      birthday.regX = 73.5;
       birthday.regY = 23.5;
       birthday.x = window.innerWidth * 0.5;
       birthday.y = window.innerHeight * 0.88;
@@ -2799,14 +2869,14 @@
       var bgm = document.getElementById("bgm");
       if (bgm.paused) {
         bgm.play();
-        document.getElementById('btn_play').style.visibility = 'hidden';
+//        document.getElementById('btn_play').style.visibility = 'hidden';
         document.getElementById('btn_play').src = 'pics/musicon.png';
-        setTimeout("document.getElementById('btn_play').style.visibility = 'visible'", 300)
+//        setTimeout("document.getElementById('btn_play').style.visibility = 'visible'", 300)
       } else {
         bgm.pause();
-        document.getElementById('btn_play').style.visibility = 'hidden';
+//        document.getElementById('btn_play').style.visibility = 'hidden';
         document.getElementById('btn_play').src = 'pics/musicoff.png';
-        setTimeout("document.getElementById('btn_play').style.visibility = 'visible'", 300)
+//        setTimeout("document.getElementById('btn_play').style.visibility = 'visible'", 300)
       }
     }
 
@@ -2815,13 +2885,15 @@
 
         clearAll();
         document.getElementById("datepicker").style.visibility = "visible";
+        document.getElementById("total").style.visibility = "visible";
+        document.getElementById("final").style.visibility = "visible";
 
         input_sto = setTimeout(function() {
           var send = new createjs.Bitmap(queue.getResult("birthday"));
           send.scaleX = ratio * 2.5;
           send.scaleY = ratio * 2.5;
           send.alpha = 0;
-          send.regX = 75;
+          send.regX = 73.5;
           send.regY = 23.5;
           send.x = window.innerWidth * 0.5;
           send.y = window.innerHeight * 0.88;
@@ -2829,10 +2901,10 @@
           createjs.Tween.get(send)
               .to({alpha: 1}, 800);
 
-          var txt_send = new createjs.Text("确  认", "30px Arail", "#FFFFFF");
+          var txt_send = new createjs.Text("确认", "30px Arail", "#FFFFFF");
           txt_send.scaleX = ratio * 1;
           txt_send.scaleY = ratio * 1;
-          txt_send.regX = 43;
+          txt_send.regX = 30;
           txt_send.regY = -10;
           txt_send.alpha = 0.3;
           txt_send.x = window.innerWidth * 0.5;
@@ -2857,6 +2929,8 @@
 
         clearAll();
         document.getElementById("datepicker").style.visibility = "hidden";
+        document.getElementById("total").style.visibility = "hidden";
+        document.getElementById("final").style.visibility = "hidden";
         document.getElementById("birthday").style.visibility = "visible";
         document.getElementById("content").style.visibility = "visible";
 
@@ -2871,7 +2945,9 @@
             var lines = (msg.length - 46)/13 + 10;
             document.getElementById('ta_content').style.height = lines * 40  + "px";
             textticker();
-            document.getElementById('ta_birthday').value = birthday.replace(/-/g, "        ");
+            document.getElementById('ta_birthday_year').value = birthday[0] + birthday[1] + birthday[2] + birthday[3];
+            document.getElementById('ta_birthday_month').value = birthday[5] + birthday[6];
+            document.getElementById('ta_birthday_date').value = birthday[8] + birthday[9];
           },
           error:function(e){
             alert(e);
@@ -2884,37 +2960,37 @@
           document.getElementById("download").style.display = "block";
           document.getElementById("back").style.display = "block";
 
-          var download = new createjs.Bitmap(queue.getResult("birthday"));
-          download.scaleX = ratio * 2.5;
-          download.scaleY = ratio * 2.5;
+          var download = new createjs.Bitmap(queue.getResult("back"));
+          download.scaleX = ratio * 1.5;
+          download.scaleY = ratio * 1.5;
           download.alpha = 0;
-          download.regX = 75;
-          download.regY = 23.5;
-          download.x = window.innerWidth * 0.5;
-          download.y = window.innerHeight * 0.78;
+          download.regX = 56;
+          download.regY = 25;
+          download.x = window.innerWidth * 0.3;
+          download.y = window.innerHeight * 0.88;
           stage.addChild(download);
           createjs.Tween.get(download)
               .to({alpha: 1}, 800);
 
-          var back = new createjs.Bitmap(queue.getResult("birthday"));
-          back.scaleX = ratio * 2.5;
-          back.scaleY = ratio * 2.5;
+          var back = new createjs.Bitmap(queue.getResult("back"));
+          back.scaleX = ratio * 1.5;
+          back.scaleY = ratio * 1.5;
           back.alpha = 0;
-          back.regX = 75;
-          back.regY = 23.5;
-          back.x = window.innerWidth * 0.5;
+          back.regX = 56;
+          back.regY = 25;
+          back.x = window.innerWidth * 0.7;
           back.y = window.innerHeight * 0.88;
           stage.addChild(back);
           createjs.Tween.get(back)
               .to({alpha: 1}, 800);
 
-          var txt_download = new createjs.Text("OK", "30px Arail", "#FFFFFF");
+          var txt_download = new createjs.Text("确认", "30px Arail", "#FFFFFF");
           txt_download.scaleX = ratio * 1;
           txt_download.scaleY = ratio * 1;
           txt_download.regX = 30;
           txt_download.regY = -10;
           txt_download.alpha = 0.3;
-          txt_download.x = window.innerWidth * 0.5;
+          txt_download.x = window.innerWidth * 0.7;
           txt_download.y = window.innerHeight * 0.88;
           txt_download.textBaseline = "alphabetic";
           stage.addChild(txt_download);
@@ -2922,14 +2998,14 @@
               .to({alpha: 1}, 800)
               .to({alpha: 0.3}, 800);
 
-          var txt_back = new createjs.Text("BACK", "30px Arail", "#FFFFFF");
+          var txt_back = new createjs.Text("返回", "30px Arail", "#FFFFFF");
           txt_back.scaleX = ratio * 1;
           txt_back.scaleY = ratio * 1;
-          txt_back.regX = 45;
+          txt_back.regX = 30;
           txt_back.regY = -10;
           txt_back.alpha = 0.3;
-          txt_back.x = window.innerWidth * 0.5;
-          txt_back.y = window.innerHeight * 0.78;
+          txt_back.x = window.innerWidth * 0.3;
+          txt_back.y = window.innerHeight * 0.88;
           txt_back.textBaseline = "alphabetic";
           stage.addChild(txt_back);
           createjs.Tween.get(txt_back, {loop: true})
@@ -2960,6 +3036,9 @@
       document.getElementById("content").style.visibility = "hidden";
       document.getElementById("birthday").style.visibility = "hidden";
       document.getElementById("download").style.display = "none";
+      document.getElementById("download_ios").style.display = "block";
+      document.getElementById("download_android").style.display = "block";
+      document.getElementById("follow").style.display = "block";
       document.getElementById("back").style.display = "none";
 
       var txt_who_am_i = new createjs.Text("我是谁", "40px Arail", "#FFFFFF");
@@ -3037,29 +3116,16 @@
           .wait(500)
           .to({rotation: 2250}, 60000);
 
-      var txt_ios = new createjs.Text("iOS 下载", "40px Arail", "#FFFFFF");
-      txt_ios.scaleX = ratio * 0.7;
-      txt_ios.scaleY = ratio * 0.7;
-      txt_ios.regX = 80;
-      txt_ios.alpha = 0;
-      txt_ios.x = window.innerWidth * 0.5;
-      txt_ios.y = window.innerHeight * 0.7;
-      txt_ios.textBaseline = "alphabetic";
-      stage.addChild(txt_ios);
-      createjs.Tween.get(txt_ios)
-          .wait(3700)
-          .to({alpha: 1}, 200);
-
-      var txt_android = new createjs.Text("Android 下载", "40px Arail", "#FFFFFF");
-      txt_android.scaleX = ratio * 0.7;
-      txt_android.scaleY = ratio * 0.7;
-      txt_android.regX = 120;
-      txt_android.alpha = 0;
-      txt_android.x = window.innerWidth * 0.5;
-      txt_android.y = window.innerHeight * 0.78;
-      txt_android.textBaseline = "alphabetic";
-      stage.addChild(txt_android);
-      createjs.Tween.get(txt_android)
+      var txt_follow = new createjs.Text("关注公众号", "40px Arail", "#FFFFFF");
+      txt_follow.scaleX = ratio * 0.7;
+      txt_follow.scaleY = ratio * 0.7;
+      txt_follow.regX = 100;
+      txt_follow.alpha = 0;
+      txt_follow.x = window.innerWidth * 0.5;
+      txt_follow.y = window.innerHeight * 0.77;
+      txt_follow.textBaseline = "alphabetic";
+      stage.addChild(txt_follow);
+      createjs.Tween.get(txt_follow)
           .wait(3700)
           .to({alpha: 1}, 200);
 
@@ -3070,22 +3136,22 @@
       download_frame_1.regX = 73.5;
       download_frame_1.regY = 23.5;
       download_frame_1.x = window.innerWidth * 0.5;
-      download_frame_1.y = window.innerHeight * 0.693;
+      download_frame_1.y = window.innerHeight * 0.763;
       stage.addChild(download_frame_1);
       createjs.Tween.get(download_frame_1)
           .wait(3700)
           .to({alpha: 1}, 200);
 
-      var download_frame_2 = new createjs.Bitmap(queue.getResult("download_frame"));
-      download_frame_2.scaleX = ratio * 2;
-      download_frame_2.scaleY = ratio * 2;
-      download_frame_2.alpha = 0;
-      download_frame_2.regX = 73.5;
-      download_frame_2.regY = 23.5;
-      download_frame_2.x = window.innerWidth * 0.5;
-      download_frame_2.y = window.innerHeight * 0.773;
-      stage.addChild(download_frame_2);
-      createjs.Tween.get(download_frame_2)
+      var download_plat = new createjs.Bitmap(queue.getResult("download"));
+      download_plat.scaleX = ratio;
+      download_plat.scaleY = ratio;
+      download_plat.alpha = 0;
+      download_plat.regX = 130;
+      download_plat.regY = 28.5 ;
+      download_plat.x = window.innerWidth * 0.5;
+      download_plat.y = window.innerHeight * 0.683;
+      stage.addChild(download_plat);
+      createjs.Tween.get(download_plat)
           .wait(3700)
           .to({alpha: 1}, 200);
 
@@ -3138,8 +3204,12 @@
 
 <body onload="init()">
 
+<div style='display:none;'>
+  <img src='pics/logo.jpg' />
+</div>
+
 <div id="loadBar01" class="loadBar">
-  <span class="percentNum">0%</span>
+  <span id="percentNum" class="percentNum" style="line-height: 40px">0%</span>
 </div>
 
 <div id="input" onclick="input()"></div>
@@ -3149,6 +3219,12 @@
 <div id="back" onclick="back()"></div>
 
 <div id="download" onclick="download()"></div>
+
+<div id="download_ios" onclick="alert('ios')"></div>
+
+<div id="download_android" onclick="window.open('http://www.baidu.com','_self')"></div>
+
+<div id="follow" onclick="window.open('http://mp.weixin.qq.com/s?__biz=MzA5NzE5NDc0OQ==&mid=209187733&idx=1&sn=8e4c470cd9d4da6d9b778f722085b17f#rd','_self')"></div>
 
 <canvas id="demo" height="100" width="100"></canvas>
 
@@ -3167,28 +3243,39 @@
 <!--birthday frame-->
 <div id='birthday' style="z-index: 1000; position: absolute; left: 60px; top: 160px; visibility: hidden">
   <img src="pics/birthday_frame.png" style="position: absolute;left :0px;top: -20px;width:510px;height:100px">
-    <textarea id="ta_birthday" name="bd" readonly ="readonly" style="z-index: 1000;border:0;overflow: visible;
-    font-size: 38px;color: #FFFFFF;
-    background-color: transparent;
-    position: absolute; left: 80px; top: 5px;
-    "></textarea>
+  <textarea id="ta_birthday_year" name="bd" readonly ="readonly" style="z-index: 1000;border:0;overflow: visible;
+  font-size: 38px;color: #FFFFFF;
+  background-color: transparent;
+  position: absolute; left: 70px; top: 5px;
+  "></textarea>
+  <textarea id="ta_birthday_month" name="bd" readonly ="readonly" style="z-index: 1000;border:0;overflow: visible;
+  font-size: 38px;color: #FFFFFF;
+  background-color: transparent;
+  position: absolute; left: 255px; top: 5px;
+  "></textarea>
+  <textarea id="ta_birthday_date" name="bd" readonly ="readonly" style="z-index: 1000;border:0;overflow: visible;
+  font-size: 38px;color: #FFFFFF;
+  background-color: transparent;
+  position: absolute; left: 390px; top: 5px;
+  "></textarea>
 </div>
 
 <!--content frame-->
-<div id='content' style="z-index: 1000; position: absolute; left: 120px; top: 200px; height:480px; width:400px; visibility: hidden;">
-  <img src="pics/content_frame.png" style="position: absolute;left:-50px;top: -50px;width:500px; height:500px">
-  <div id="wrapper" style="height: 400px; width: 400px; overflow: hidden;position:relative;">
-    <div id="ta_content" style="line-height: 40px;font-size: 24px;color:#FFFFFF; position: absolute; left:0px; top:0px;
-      "></div>
+<div id='content' style="z-index: 1000; position: absolute; left: 120px; top: 200px; bottom:15%; width:400px; visibility: hidden;">
+  <img src="pics/content_frame.png" style="position: absolute;left:-50px;top: -10%;width:500px; height:100%">
+  <div id="wrapper" style="top: 0px;height: 80%; width: 400px; overflow: hidden;position:relative;">
+    <div id="ta_content" style="line-height: 40px;font-size: 24px;color:#FFFFFF; position: absolute; left:0px; top:0px;"></div>
   </div>
 </div>
 
 <!--date picker-->
-<div id='datepicker' style="z-index: 1000;position: absolute;left: 50px;top: 25%;visibility: hidden">
+<div id='datepicker' style="z-index: 1000;position: absolute;left: 50px;top: 220px;visibility: hidden">
 
-  <img src="pics/year_frame.png" style="position: absolute;left:-16px;top: -35px;width:240px;">
-  <img src="pics/month_frame.png" style="position: absolute;left:348px;top: -35px;width:200px;">
-  <img src="pics/date_frame.png" style="position: absolute;left:202px;top: -35px;width:160px;">
+  <img src="pics/year-btn.png" style="position: absolute;left:20px;top: -10px;width:108px;">
+  <img src="pics/month-btn.png" style="position: absolute;left:120px;top: -30px;width:126px;">
+  <img src="pics/month-btn.png" style="position: absolute;left:220px;top: -30px;width:126px;">
+  <img src="pics/changenumber-btn.png" style="position: absolute;left:350px;top: -30px;width:110px;">
+  <img src="pics/changenumber-btn.png" style="position: absolute;left:440px;top: -30px;width:110px;">
 
   <div class="date-wrapper">
     <form name="date">
@@ -3274,7 +3361,7 @@
         <option value="1978">1978</option>
         <option value="1979">1979</option>
         <option value="1980">1980</option>
-        <option selected value="1980">年</option>
+        <option selected value="1980">&nbsp&nbsp年</option>
         <option value="1981">1981</option>
         <option value="1982">1982</option>
         <option value="1983">1983</option>
@@ -3374,6 +3461,18 @@
     </form>
   </div>
 </div>
+
+<div id="total" style="z-index: 1000;position: absolute;left: 420px;top: 227px;visibility: hidden">
+  <span class="t_num"></span>
+</div>
+
+<div id="final" style="z-index: 1000; position: absolute; left: 274px; top: 650px; visibility: hidden; color: rgb(255, 255, 255); font-size: 30px;">
+  <img src="pics/lastnumber-btn.png" style="position: absolute;left:-15px;top: -20px;width:130px;">
+  <span class="f_num"></span>
+</div>
+
+<input type="hidden" id="cur_num" value="">
+
 
 </body>
 </html>

@@ -10,7 +10,7 @@ var sixSchema = new mongoose.Schema({
     avatar: String,
     city: String
   },
-  context: String,
+  content: String,
   chain: Array,
   update_time: {type: Date, default: Date.now()},
   status: Number //0:passing 1:complete 2:expired
@@ -23,7 +23,7 @@ var sixModel = mongoose.model('Six', sixSchema);
 function Six(six) {
   this.establish = six.establish;
   this.target = six.target;
-  this.context = six.context;
+  this.content = six.content;
   this.chain = six.chain;
   this.status = six.status;
 }
@@ -32,7 +32,7 @@ Six.prototype.save = function(callback) {
   var six = {
     establish: this.establish,
     target: this.target,
-    context: this.context,
+    content: this.content,
     chain: this.chain,
     status: this.status
   };
@@ -107,7 +107,6 @@ Six.read = function(sixId, userId, callback) {
 };
 
 Six.update = function(userId, userInfo, callback) {
-  console.log('six.update')
   sixModel.find({'chain.userId': userId}, function (err, sixes) {
     if (err) {
       return callback(err);
@@ -131,20 +130,17 @@ Six.update = function(userId, userInfo, callback) {
           }
         }
       }
-      console.log(chain[i])
-      console.log(sixes[i]['_id'])
+
       sixModel.update({_id: sixes[i]['_id']}, {chain: chain[i]}, function(err, res){
         if (err) {
           return callback(err);
         }
-        console.log(res)
       });
       if (sixes[i]['target']['id']==userId) {
         sixModel.update({_id: sixes[i]['_id']}, {'target.city': userInfo['city']}, function(err, res){
           if (err) {
             return callback(err);
           }
-          console.log(res)
         })
       }
     }
