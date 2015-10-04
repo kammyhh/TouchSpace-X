@@ -778,14 +778,16 @@ exports.promotion = function(birthday, callback) {
     str_birth = String(month * 100 + date);
   LifeGuardCard.findOne(str_birth, function(err, life_guard_card) {
     var life_card = life_guard_card['life_card'].split('或')[0];
+    var guard_card = life_guard_card['guard_card'].split('或')[0];
     Deck.getOne(life_card, age, function (err, deck) {
       var spec = 'long_term',
         card = deck['cards'][spec][0];
       if (err) throw err;
       if (deck!=null) {
         Solution.findOne(card, function (err, solution) {
+          life_card.replace('红桃', '❤️').replace('黑桃', '♠️').replace('方块', '♦️').replace('草花', '♣️')
           var txt = '我们知道你的\n年龄：' + age + '\n星座：' + get_constellation(month * 100 + date)
-            + '\n生命数字：' + get_secret_number(birthday) + '\n我们还知道你今年所面临的\n一些事情：\n\n' + solution[spec];
+            + '\n生命数字：' + get_secret_number(birthday) + '\n生命牌：' + life_card.replace('红桃', '❤️').replace('黑桃', '♠️').replace('方块', '♦️').replace('草花', '♣️') + '\n行星守护牌：' + guard_card.replace('红桃', '❤️').replace('黑桃', '♠️').replace('方块', '♦️').replace('草花', '♣️')+ '\n\n我们还知道你今年所面临的\n一些事情：\n' + solution[spec];
           callback(txt + '\n（此处还有一万字已略去）')
         })
       }  else {

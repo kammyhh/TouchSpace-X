@@ -10,12 +10,11 @@ var Solution = require('../models/solution.js');
 var Deck = require('../models/deck.js');
 var Value = require('../value.js');
 var log = require('../log').logger;
-
+var fs = require('fs');
 
 
 var ip = '119.254.102.92';
 log.info('API loaded.');
-
 
 
 router.get('/', function(req, res) {
@@ -119,7 +118,6 @@ router.get('/balance', function(req, res) {
 });
 
 
-
 //user behavior
 router.post('/login', function(req, res) {
   utils.login(req, res)
@@ -140,7 +138,6 @@ router.get('/verification', function(req, res) {
 router.get('/verify', function(req, res) {
   utils.verify(req, res)
 });
-
 
 
 router.get('/register', function(req, res) {
@@ -174,7 +171,6 @@ router.get('/earnExp', function(req, res){
 router.post('/checkAttr', function(req, res){
   utils.checkAttr(req, res)
 });
-
 
 
 //info
@@ -383,8 +379,6 @@ router.get('/init/music', function(req, res) {
 });
 
 
-
-
 var wechat = require('wechat');
 var wechatApi = require('wechat-api');
 var config = {
@@ -443,16 +437,16 @@ router.use('/wechat', wechat(config, function (req, res, next) {
 router.use('/wechat_menu', function (req, res) {
   var menu = {
     "button": [
-      {
-        "name": "App下载",
-        "sub_button": [
-          {
-            "type": "view",
-            "name": "App前瞻",
-            "url": "http://m.touchspacex.com"
-          }
-        ]
-      },
+      //{
+      //  "name": "App下载",
+      //  "sub_button": [
+      //    {
+      //      "type": "view",
+      //      "name": "App前瞻",
+      //      "url": "http://m.touchspacex.com"
+      //    }
+      //  ]
+      //},
       {
         "type": "view",
         "name": "官方微博",
