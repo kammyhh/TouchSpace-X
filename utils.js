@@ -853,7 +853,10 @@ exports.cardSolution = function(req, res) {
 };
 
 exports.secretNumberInfo = function(req, res) {
-  var secret_number = req.header.digit;
+  var secret_number = req.headers.digit;
+  console.log(req)
+
+  console.log(secret_number)
   Characteristic.query(secret_number, function(err, result){
     if (err) throw  err;
     var response = {
