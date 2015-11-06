@@ -4,7 +4,8 @@
 var mongoose = require('./mongoose.js');
 var Deck = require('./deck.js');
 var Six = require('./six.js');
-var Utils = require('../utils.js');
+var Utils = require('../utils/utils.js');
+var Value = require('../utils/value.js');
 var userSchema = new mongoose.Schema({
   username: String,
   password: String,
@@ -157,8 +158,8 @@ User.setLogin = function(userId, last_login, callback) {
   })
 };
 
-User.logout = function(userId, callback) {
-  userModel.update({userId: userId}, {token: 'empty'}, function (err) {
+User.logout = function(userId, token, callback) {
+  userModel.update({_id: userId, token: token}, {token: Value.default_token}, function (err, result) {
     if (err) {
       return callback(err);
     }
@@ -211,8 +212,8 @@ User.setContact = function(userId, contact, callback) {
   })
 };
 
-User.purchaseMusic = function(userId, purchased, callback) {
-  userModel.update({_id: userId}, {'purchased_music': purchased}, function(err, result) {
+User.purchaseMusic = function(userId, purchased, cost, callback) {
+  userModel.update({_id: userId}, {'purchased_music': purchased, $inc: {'detail.balance': -cost}}, function(err, result) {
     if (err) {
       return callback(err);
     }
@@ -276,15 +277,19 @@ User.countActiveInConstellation = function(constellation, callback){
 
 User.rankInConstellation = function(userId, constellation, callback){
   User.info(userId, function(err, user){
-    if (err) {
-      return callback(err);
-    }
-    userModel.count({'detail.energy': {$gt:user['detail']['energy']}, 'detail.constellation': constellation}, function(err, count) {
+    if (user != null) {
       if (err) {
         return callback(err);
       }
-      callback(null, count+1);
-    })
+      userModel.count({'detail.energy': {$gt:user['detail']['energy']}, 'detail.constellation': constellation}, function(err, count) {
+        if (err) {
+          return callback(err);
+        }
+        callback(null, count+1);
+      })
+    } else {
+      callback();
+    }
   });
 };
 
@@ -303,7 +308,7 @@ User.countGenderInConstellation = function(gender, constellation, callback){
   })
 };
 
-User.get_all = function(callback) {
+User.getAll = function(callback) {
   var results = [];
   userModel.find({left_chance: {$gt: 0}}, function (err, users) {
     if (err) {
@@ -415,7 +420,6 @@ User.contactList = function(userId, callback) {
 };
 
 User.checkContact = function(contact, callback) {
-  console.log(contact)
   userModel.find({'detail.phone': {$in: contact}}, {_id: 1, 'detail.phone': 1}, function (err, users) {
     if (err) {
       return callback(err);
@@ -450,15 +454,36 @@ User.loadStars = function(userId, constellation, callback) {
     if (err) {
       return callback(err);
     }
-    callback(null, stars)
+    callback(null, stars);
     console.log(stars)
   }).sort({'last_login.time': -1}).limit(1000)
 };
 
 User.changePassword = function(userId, password, callback) {
-  userModel.update({userId: userId}, {password: password}, function(err){
+  userModel.update({_id: userId}, {password: password}, function(err){
+    if (err) {
+      return callback(err);
+    }
     callback(null)
   })
-}
+};
+
+User.changeEmail = function(username, email, callback) {
+  userModel.update({username: username}, {'detail.email': email}, function(err){
+    if (err) {
+      return callback(err);
+    }
+    callback(null)
+  })
+};
+
+User.topUp = function(userId, money, callback) {
+  userModel.update({_id: userId}, {$inc: {'detail.balance': money}}, function(err){
+    if (err) {
+      return callback(err);
+    }
+    callback(null)
+  })
+};
 
 module.exports = User;

@@ -1,6 +1,22 @@
 
+access.log
+
+.idea/deployment.xml
+
+.idea/dictionaries/hh.xml
+
+.idea/inspectionProfiles/profiles_settings.xml
+
+tsx-error.log
+
+tsx-access.log
+
+access_token.txt
+
 .idea/workspace.xml
 
-node_modules/reg.html
+.idea/jsLibraryMappings.xml
 
-access.log
+.idea/inspectionProfiles/Project_Default.xml
+
+.idea/jsLibraryMappings.xml

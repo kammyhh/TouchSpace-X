@@ -2,7 +2,7 @@
  * Created by hh on 15/6/14.
  */
 var mongoose = require('./mongoose.js');
-var Utils = require('../utils.js');
+var Utils = require('../utils/utils.js');
 var matchSchema = new mongoose.Schema({
   begin: String,
   end: String,
@@ -59,10 +59,10 @@ Match.accept = function(matchId, userId, callback) {
     if (userId == end) {
       targetId = begin;
     }
-    if ((userId == begin) && (Utils.if_contains([0, 2], status))) {
+    if ((userId == begin) && (Utils.ifContains([0, 2], status))) {
       status += 1;
     }
-    if ((userId == end) && (Utils.if_contains([0, 1], status)))  {
+    if ((userId == end) && (Utils.ifContains([0, 1], status)))  {
       status += 2;
       targetId = begin;
     }

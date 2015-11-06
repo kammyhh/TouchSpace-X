@@ -3,7 +3,7 @@
  */
 var mongoose = require('./mongoose.js');
 var User = require('./user.js');
-var utils = require('../utils.js');
+var utils = require('../utils/utils.js');
 var musicSchema = new mongoose.Schema({
   title: String,
   constellation: String,
@@ -49,7 +49,7 @@ Music.like = function(musicId, userId, callback) {
     if (err) {
       return callback(err);
     }
-    if (utils.if_contains(music['like'], userId)){
+    if (utils.ifContains(music['like'], userId)){
       for (var i=0;i<music['like'].length;i++){
         if (userId==music['like'][i]) {
           music['like'] = music['like'].slice(0, i).concat(music['like'].slice(i+1));
@@ -77,7 +77,7 @@ Music.list = function(userId, callback) {
       var list = [], like = [], purchased = [];
       for (var i = 0; i < musics.length; i++) {
 
-        if (utils.if_contains(user['purchased_music'], musics[i]['_id'].toString())) {
+        if (utils.ifContains(user['purchased_music'], musics[i]['_id'].toString())) {
           list[i] = {
             id: musics[i]['_id'],
             title: musics[i]['title'],
@@ -93,7 +93,7 @@ Music.list = function(userId, callback) {
             like: musics[i]['like'].length
           }
         }
-        if (utils.if_contains(musics[i]['like'], user['_id'].toString())) {
+        if (utils.ifContains(musics[i]['like'], user['_id'].toString())) {
           like[like.length] = {
             id: musics[i]['_id'],
             title: list[i]['title'],
@@ -129,7 +129,7 @@ Music.updateList = function(files, callback) {
     }
     var result = [];
     for (i=0;i<titles.length;i++) {
-      if (!utils.if_contains(exists, titles[i])) {
+      if (!utils.ifContains(exists, titles[i])) {
         result.push(titles[i])
       }
     }

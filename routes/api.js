@@ -1,21 +1,29 @@
 var express = require('express');
 var router = express.Router();
 var Version = require('../models/version.js');
-var utils = require('../utils');
-var init = require('../init');
+var utils = require('../utils/utils');
+var init = require('../utils/init');
 var http = require('http');
 var querystring = require('querystring');
 var LifeGuardCard = require('../models/life_guard_card.js');
 var Solution = require('../models/solution.js');
 var Deck = require('../models/deck.js');
-var Value = require('../value.js');
-var log = require('../log').logger;
+var Value = require('../utils/value.js');
+var log = require('../utils/log').accessLogger;
 var fs = require('fs');
+var path = require('path');
 
 
 var ip = '119.254.102.92';
 log.info('API loaded.');
 
+router.use(function accessLog(req, res, next) {
+  var method = req.method;
+  var url = req.baseUrl;
+  var ip = '[' + req._remoteAddress.split(':').pop() + ']';
+  log.info([method, url, ip].join(' '));
+  next();
+});
 
 router.get('/', function(req, res) {
   res.send('Date:'+ new Date(Date.now()));
@@ -119,6 +127,14 @@ router.get('/balance', function(req, res) {
 
 
 //user behavior
+router.get('/key', function(req, res) {
+  utils.key(req, res)
+});
+
+router.get('/register', function(req, res) {
+  utils.register(req, res)
+});
+
 router.post('/login', function(req, res) {
   utils.login(req, res)
 });
@@ -131,17 +147,12 @@ router.post('/locate', function(req, res) {
   utils.locate(req, res)
 });
 
-router.get('/verification', function(req, res) {
-  utils.verification(req, res)
+router.get('/topUp', function(req, res) {
+  utils.topUp(req, res)
 });
 
-router.get('/verify', function(req, res) {
-  utils.verify(req, res)
-});
-
-
-router.get('/register', function(req, res) {
-  utils.register(req, res)
+router.get('/bindEmail', function(req, res) {
+  utils.bindEmail(req, res)
 });
 
 router.post('/editProfile', function(req, res) {
@@ -152,12 +163,20 @@ router.get('/changePassword', function(req, res) {
   utils.changePassword(req, res)
 });
 
+router.get('/findPassword', function(req, res) {
+  utils.findPassword(req, res)
+});
+
 router.post('/uploadAvatar', function(req, res) {
   utils.uploadAvatar(req, res)
 });
 
 router.post('/uploadContact', function(req, res) {
   utils.uploadContact(req, res)
+});
+
+router.get('/checkContact', function(req, res) {
+  utils.checkContact(req, res)
 });
 
 router.get('/alive', function(req, res){
@@ -168,12 +187,12 @@ router.get('/earnExp', function(req, res){
   utils.earnExp(req, res)
 });
 
+
+//info
 router.post('/checkAttr', function(req, res){
   utils.checkAttr(req, res)
 });
 
-
-//info
 router.get('/anytimeDeck', function(req, res) {
   utils.anytimeDeck(req, res)
 });
@@ -192,10 +211,6 @@ router.get('/contactInfo', function(req, res) {
 
 router.get('/contactList', function(req, res) {
   utils.contactList(req, res)
-});
-
-router.get('/checkContact', function(req, res) {
-  utils.checkContact(req, res)
 });
 
 router.post('/cardSolution', function(req, res) {
@@ -379,8 +394,6 @@ router.get('/init/music', function(req, res) {
 });
 
 
-var wechat = require('wechat');
-var wechatApi = require('wechat-api');
 var config = {
   token: 'apidiantouchspacexdiancom',
   appid: 'wxbc63a04bd2c0bfb9',
@@ -388,17 +401,7 @@ var config = {
   encodingAESKey: 'CdP2ZYYv5PDdML2iYIw2GTdHjmrbdcRH3zSxzb6BZN1'
 };
 
-//var api = new wechatApi(config['appid'], config['appSecret']);
-
-var api = new wechatApi(config['appid'], config['appSecret'], function (callback) {
-      fs.read('/tmp/access_token.txt', 'utf8', function (err, txt) {
-        if (err) {return callback(err);}
-        callback(null, JSON.parse(txt));
-      });
-    }, function (token, callback) {
-      fs.write('/tmp/access_token.txt', JSON.stringify(token), callback);
-    });
-
+var wechat = require('wechat');
 router.use('/wechat', wechat(config, function (req, res, next) {
   // 微信输入信息都在req.weixin上
   var message = req.weixin;
@@ -434,6 +437,26 @@ router.use('/wechat', wechat(config, function (req, res, next) {
 
 }));
 
+var wechatApi = require('wechat-api');
+//var api = new wechatApi(config['appid'], config['appSecret']);
+var file_path = path.join(__dirname,'./../access_token.txt');
+var api = new wechatApi(config['appid'], config['appSecret'], function (callback) {
+  fs.exists(file_path, function(exists) {
+    if (exists) {
+      fs.readFile(path.join(__dirname,'./../access_token.txt'), {encoding:'utf8',flag:'r'}, function (err, txt) {
+        if (err) throw err;
+        callback(null, JSON.parse(txt));
+      });
+    } else {
+      callback(null, this.store);
+    }
+  });
+}, function (token, callback) {
+  // 请将token存储到全局，跨进程、跨机器级别的全局，比如写到数据库、redis等
+  // 这样才能在cluster模式及多机情况下使用，以下为写入到文件的示例
+  fs.writeFile(file_path, JSON.stringify(token));
+  callback(null);
+});
 router.use('/wechat_menu', function (req, res) {
   var menu = {
     "button": [
@@ -456,14 +479,16 @@ router.use('/wechat_menu', function (req, res) {
         "type": "view",
         "name": "官网",
         "url": "http://www.touchspacex.com"
+      },
+      {
+        "type": "view",
+        "name": "欢迎入群",
+        "url": "http://mp.weixin.qq.com/s?__biz=MzA5NzE5NDc0OQ==&mid=209635926&idx=3&sn=8688b5432df2506186950487c4324ccb#rd"
       }
     ]
   };
   api.createMenu(menu, function(err, result) {
-    if (result.errcode != 0) {
-      console.info(result);
-    }
-    console.info(result);
+    res.send(result)
   });
 });
 

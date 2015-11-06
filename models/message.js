@@ -55,14 +55,16 @@ Message.receive = function(userId, callback) {
 };
 
 Message.history = function(userId, contactId,callback) {
-  messageModel.find(  {$or:[{to: userId, 'from.userId': contactId},
-    {to: contactId, 'from.userId': userId}]},
-    {_id: 1, from: 1, message:1, date:1}, function(err, messages){
-    if (err) {
-      return callback(err);
-    }
-    callback(null, messages);
-  }).sort({date: -1}).limit(10)
+  messageModel.find({
+      $or: [{to: userId, 'from.userId': contactId},
+        {to: contactId, 'from.userId': userId}]
+    },
+    {_id: 1, from: 1, message: 1, date: 1}, function (err, messages) {
+      if (err) {
+        return callback(err);
+      }
+      callback(null, messages);
+    }).sort({date: -1}).limit(10)
 };
 
 Message.confirm = function(userId, msgIds, callback) {
